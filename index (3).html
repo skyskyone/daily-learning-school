@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>每日學堂</title>
+  <meta name="description" content="每日一題學習練習網站">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="paper-bg">
+  <div class="seal seal-top">學</div>
+  <main id="app" class="page-shell">
+    <section id="login-view" class="panel login-panel">
+      <div class="brand-mark">每日學堂</div>
+      <p class="eyebrow">一日一題 · 日積月累</p>
+      <h1>請入學堂</h1>
+      <p class="muted">請選擇你的姓名，再輸入老師提供的四位 PIN。</p>
+      <div id="login-error" class="notice error hidden"></div>
+      <label class="field-label" for="student-name">學生姓名</label>
+      <select id="student-name" class="field"></select>
+      <label class="field-label" for="student-pin">四位 PIN</label>
+      <input id="student-pin" class="field pin-field" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
+      <button id="student-login" class="primary-btn">入學堂</button>
+      <p class="tiny-note">PIN 為四位數字。連續輸入錯誤會暫時鎖定。</p>
+    </section>
+
+    <section id="student-view" class="hidden">
+      <header class="student-header">
+        <div>
+          <p class="eyebrow">每日一題</p>
+          <h1 id="student-greeting">學子</h1>
+        </div>
+        <div class="header-actions">
+          <a href="student-history.html">作答紀錄</a>
+          <button id="student-logout" class="text-btn">離開學堂</button>
+        </div>
+      </header>
+
+      <div id="student-notice" class="notice hidden"></div>
+
+      <section class="question-card">
+        <div class="question-ribbon">今日題</div>
+        <div id="question-state" class="question-state">載入中…</div>
+        <h2 id="question-text" class="question-text">—</h2>
+        <div id="options" class="options-grid"></div>
+        <div id="answer-message" class="answer-message hidden"></div>
+      </section>
+
+      <section class="quick-links">
+        <a class="link-card" href="leaderboard.html">
+          <span class="link-title">每週榜</span>
+          <span class="link-desc">上一個已結算週</span>
+        </a>
+        <a class="link-card" href="student-history.html">
+          <span class="link-title">作答簿</span>
+          <span class="link-desc">查看自己的每日結果</span>
+        </a>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">靜心讀題，慎思作答。</footer>
+
+  <script src="config.js"></script>
+  <script src="assets/api.js"></script>
+  <script src="assets/student.js"></script>
+</body>
+</html>
