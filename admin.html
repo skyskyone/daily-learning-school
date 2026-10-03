@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>管理後台｜每日學堂</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="paper-bg">
+  <main class="admin-shell">
+    <section id="admin-login-view" class="panel login-panel">
+      <div class="brand-mark">每日學堂</div>
+      <p class="eyebrow">師門後台</p>
+      <h1>管理員入口</h1>
+      <div id="admin-login-error" class="notice error hidden"></div>
+      <label class="field-label" for="admin-username">管理員帳號</label>
+      <input id="admin-username" class="field" autocomplete="username">
+      <label class="field-label" for="admin-password">管理員密碼</label>
+      <input id="admin-password" type="password" class="field" autocomplete="current-password">
+      <button id="admin-login" class="primary-btn">進入後台</button>
+    </section>
+
+    <section id="admin-view" class="hidden">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">師門後台</p>
+          <h1>每日學堂管理</h1>
+        </div>
+        <button id="admin-logout" class="text-btn">登出</button>
+      </header>
+
+      <div id="admin-notice" class="notice hidden"></div>
+
+      <nav class="admin-tabs">
+        <button data-tab="students" class="tab active">學生</button>
+        <button data-tab="questions" class="tab">每日題目</button>
+        <button data-tab="results" class="tab">每日結算</button>
+        <button data-tab="settings" class="tab">時間設定</button>
+      </nav>
+
+      <section id="tab-students" class="admin-section">
+        <div class="section-heading"><div><p class="eyebrow">Student Roster</p><h2>學生名冊</h2></div></div>
+        <form id="student-form" class="form-grid">
+          <label>學生姓名<input id="new-student-name" class="field" maxlength="120" required></label>
+          <label>四位 PIN<input id="new-student-pin" class="field" inputmode="numeric" maxlength="4" required></label>
+          <button class="primary-btn" type="submit">新增學生</button>
+        </form>
+        <div id="students-table" class="table-wrap"></div>
+      </section>
+
+      <section id="tab-questions" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">Question Desk</p><h2>每日題目</h2></div></div>
+        <form id="question-form" class="form-grid two-col">
+          <label>題目日期<input id="question-date" type="date" class="field" required></label>
+          <label>正確答案<select id="correct-option" class="field"><option value="1">一</option><option value="2">二</option></select></label>
+          <label class="full">問題<textarea id="question-text-admin" class="field" rows="4" maxlength="2000" required></textarea></label>
+          <label>答案一<textarea id="option1-admin" class="field" rows="3" maxlength="1000" required></textarea></label>
+          <label>答案二<textarea id="option2-admin" class="field" rows="3" maxlength="1000" required></textarea></label>
+          <button class="primary-btn" type="submit">儲存題目</button>
+        </form>
+        <div id="questions-table" class="table-wrap"></div>
+      </section>
+
+      <section id="tab-results" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">Daily Settlement</p><h2>每日結算</h2></div></div>
+        <div class="inline-controls">
+          <label>日期<input id="results-date" type="date" class="field"></label>
+          <button id="load-results" class="secondary-btn">查看結算</button>
+        </div>
+        <div id="results-table" class="table-wrap"></div>
+      </section>
+
+      <section id="tab-settings" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">School Bell</p><h2>時間設定</h2></div></div>
+        <form id="settings-form" class="form-grid two-col">
+          <label>每日開題時間<input id="publish-time" type="time" class="field" required></label>
+          <label>每日結算時間<input id="close-time" type="time" class="field" required></label>
+          <label class="full">時區<input id="timezone" class="field" placeholder="Asia/Taipei" required></label>
+          <button class="primary-btn" type="submit">儲存時間設定</button>
+        </form>
+        <p class="tiny-note">建議使用 IANA 時區，例如 Asia/Taipei、Asia/Hong_Kong、America/Los_Angeles。</p>
+      </section>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
