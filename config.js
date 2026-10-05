@@ -1,6 +1,7 @@
-// GitHub Pages 前端公開設定。
-// 這裡只放 Supabase 專案公開網址，不要放 service role / secret key。
+// 每日學堂前端公開設定
+// API_BASE 是 Supabase Edge Function 的公開網址。
+// 不要在這裡放 sb_secret_...、service_role key 或其他後端秘密。
 window.APP_CONFIG = {
-  API_BASE: "https://YOUR_PROJECT_REF.supabase.co/functions/v1/api",
+  API_BASE: "https://engoczfuiramblujewpb.supabase.co/functions/v1/api",
   SITE_NAME: "每日學堂"
 };
