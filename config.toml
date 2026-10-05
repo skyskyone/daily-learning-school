@@ -1,6 +1,0 @@
-# Supabase CLI 設定
-# 部署前可把 project_id 寫成你的 Supabase Project Ref；也可以使用 --project-ref 指定。
-project_id = ""
-
-[functions.api]
-verify_jwt = false
