@@ -1,7 +1,7 @@
 // 每日學堂前端公開設定
-// API_BASE 是 Supabase Edge Function 的公開網址。
-// 不要在這裡放 sb_secret_...、service_role key 或其他後端秘密。
+// Publishable key 可放在瀏覽器前端；絕對不要放 secret/service_role key。
 window.APP_CONFIG = {
   API_BASE: "https://engoczfuiramblujewpb.supabase.co/functions/v1/api",
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_tGmClwm03spjr6O_3SnmxQ_LF8ufQRQ",
   SITE_NAME: "每日學堂"
 };
