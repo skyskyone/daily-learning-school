@@ -191,7 +191,13 @@ function rankRows(rows:any[]) { let last:any = null, rank = 0; return rows.map((
 async function route(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/functions\/v1\/api/, "");
+  // Supabase Dashboard/edge gateway can expose the function pathname in
+  // slightly different forms. Normalize all expected variants to /<route>.
+  let path = url.pathname;
+  path = path
+    .replace(/^\/functions\/v1\/api/, "")
+    .replace(/^\/api/, "");
+  if (!path) path = "/";
   const body = ["POST","PUT"].includes(req.method) ? await req.json().catch(()=>({})) : {};
 
   if (path === "/public/students" && req.method === "GET") {
