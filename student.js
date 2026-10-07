@@ -84,7 +84,7 @@
       answerMessage.innerHTML = `<strong>今日結算：</strong> 你的答案：${mine}　｜　正確答案：${correct}　｜　${data.is_correct?'答對':'答錯/未作答'}`;
     }else if(data.answered){
       answerMessage.classList.remove('hidden');
-      answerMessage.textContent='今日已提交答案，結算後才會公布答案。';
+      answerMessage.textContent='今日已提交答案，結算後才會公布結果。';
     }
   }
 
