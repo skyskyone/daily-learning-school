@@ -60,7 +60,7 @@
     answerMessage.classList.add('hidden');
     optionsEl.innerHTML='';
     if (data.state === 'no_question'){
-      stateEl.textContent='今日尚未安排題目'; textEl.textContent='敬候老師出題。'; return;
+      stateEl.textContent='今日尚未安排題目'; textEl.textContent='敬候出題。'; return;
     }
     if (data.state === 'not_open'){
       stateEl.textContent = `今日題將於 ${data.publish_time} 開放`;
@@ -84,7 +84,7 @@
       answerMessage.innerHTML = `<strong>今日結算：</strong> 你的答案：${mine}　｜　正確答案：${correct}　｜　${data.is_correct?'答對':'答錯/未作答'}`;
     }else if(data.answered){
       answerMessage.classList.remove('hidden');
-      answerMessage.textContent='今日已提交答案，結算後才會公布對錯。';
+      answerMessage.textContent='今日已提交答案，結算後才會公布答案。';
     }
   }
 
