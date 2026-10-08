@@ -58,7 +58,9 @@
 
   function renderQuestion(data){
     todayData = data;
-    dateEl.textContent = data.question_date ? formatDate(data.question_date) : '';
+    const hasDate = !!data.question_date;
+    dateEl.textContent = hasDate ? formatDate(data.question_date) : '';
+    dateEl.classList.toggle('hidden', !hasDate);
     answerMessage.classList.add('hidden');
     optionsEl.innerHTML='';
     if (data.state === 'no_question'){
