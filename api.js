@@ -29,6 +29,7 @@
     get: (path) => call(path, {method:'GET'}),
     post: (path, data) => call(path, {method:'POST', body: JSON.stringify(data || {})}),
     put: (path, data) => call(path, {method:'PUT', body: JSON.stringify(data || {})}),
+    delete: (path) => call(path, {method:'DELETE'}),
     setToken: (token, role) => { localStorage.setItem('dls_token', token); localStorage.setItem('dls_role', role || ''); },
     clearToken: () => { localStorage.removeItem('dls_token'); localStorage.removeItem('dls_role'); },
     hasToken: () => !!localStorage.getItem('dls_token'),
