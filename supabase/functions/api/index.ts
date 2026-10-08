@@ -17,7 +17,7 @@ const db = createClient(SUPABASE_URL, SERVICE_KEY, {
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff"
 };
