@@ -188,6 +188,48 @@ async function leaderboardForWeek(start: string, end: string) {
 
 function rankRows(rows:any[]) { let last:any = null, rank = 0; return rows.map((r,i)=>{if(r.correct_count!==last){rank=i+1;last=r.correct_count;}return {...r,rank};}); }
 
+const goalSlots = 10;
+
+function noteTypeLabel(kind: string) {
+  return kind === "tianyan" ? "天眼" : "感應";
+}
+
+async function getStudentReflections(studentId: string) {
+  const [
+    { data: notes, error: notesError },
+    { data: goals, error: goalsError },
+    { data: questions, error: questionsError }
+  ] = await Promise.all([
+    db.from("student_notes").select("id,note_type,content,created_at,updated_at").eq("student_id", studentId).order("created_at", { ascending: false }),
+    db.from("student_goals").select("id,slot,answer_text,first_answered_at,updated_at,edit_count,updated_by").eq("student_id", studentId).order("slot", { ascending: true }),
+    db.from("student_questions").select("id,question_text,admin_answer,created_at,updated_at,answered_at").eq("student_id", studentId).order("created_at", { ascending: false })
+  ]);
+  if (notesError) throw notesError;
+  if (goalsError) throw goalsError;
+  if (questionsError) throw questionsError;
+
+  const goalMap = new Map((goals || []).map((g:any) => [g.slot, g]));
+  const goalRows = Array.from({ length: goalSlots }, (_, i) => {
+    const slot = i + 1;
+    const g = goalMap.get(slot);
+    return g || {
+      id: null,
+      slot,
+      answer_text: "",
+      first_answered_at: null,
+      updated_at: null,
+      edit_count: 0,
+      updated_by: null
+    };
+  });
+
+  return {
+    notes: notes || [],
+    goals: goalRows,
+    questions: questions || []
+  };
+}
+
 async function route(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const url = new URL(req.url);
@@ -269,6 +311,69 @@ async function route(req: Request) {
     return json({settled:true,week_start:target.start,week_end:target.end,rows:rankRows(await leaderboardForWeek(target.start,target.end)),has_questions:(checkQs||[]).length>0});
   }
 
+  if (path === "/student/reflections" && req.method === "GET") {
+    const s = await session(req, "student");
+    return json(await getStudentReflections(s.student_id!));
+  }
+
+  const studentGoalMatch = path.match(/^\/student\/goals\/(\d+)$/);
+  if (studentGoalMatch && req.method === "PUT") {
+    const s = await session(req, "student");
+    const slot = Number(studentGoalMatch[1]);
+    const answer = text(body.answer_text, 2000);
+    if (!Number.isInteger(slot) || slot < 1 || slot > goalSlots) return bad("目標編號不正確。", 422);
+    if (!answer) return bad("請先寫下你的答案。", 422);
+
+    const { data: existing, error: ge } = await db.from("student_goals")
+      .select("id,answer_text,edit_count,first_answered_at")
+      .eq("student_id", s.student_id)
+      .eq("slot", slot)
+      .maybeSingle();
+    if (ge) throw ge;
+
+    if (!existing) {
+      const { error } = await db.from("student_goals").insert({
+        student_id: s.student_id,
+        slot,
+        answer_text: answer,
+        first_answered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        edit_count: 0,
+        updated_by: "student"
+      });
+      if (error) throw error;
+      return json({ ok: true, edit_count: 0 });
+    }
+
+    if (String(existing.answer_text || "").trim() === answer.trim()) {
+      return json({ ok: true, edit_count: existing.edit_count, unchanged: true });
+    }
+
+    if ((existing.edit_count || 0) >= 2) return bad("這一項已用完兩次修改答案的機會。", 409);
+
+    const nextCount = (existing.edit_count || 0) + 1;
+    const { error } = await db.from("student_goals").update({
+      answer_text: answer,
+      updated_at: new Date().toISOString(),
+      updated_by: "student",
+      edit_count: nextCount
+    }).eq("id", existing.id);
+    if (error) throw error;
+    return json({ ok: true, edit_count: nextCount });
+  }
+
+  if (path === "/student/questions" && req.method === "POST") {
+    const s = await session(req, "student");
+    const questionText = text(body.question_text, 3000);
+    if (!questionText) return bad("請輸入你的問題。", 422);
+    const { error } = await db.from("student_questions").insert({
+      student_id: s.student_id,
+      question_text: questionText
+    });
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
   if (path === "/admin/login" && req.method === "POST") {
     const username=text(body.username,100), password=String(body.password||"");
     if(!constantEqual(username,ADMIN_USERNAME)||!constantEqual(password,ADMIN_PASSWORD))return bad("管理員帳號或密碼不正確。",401);
@@ -327,6 +432,96 @@ async function route(req: Request) {
 
   if (path === "/admin/leaderboard" && req.method === "GET") {
     await session(req,"admin"); const cfg=await settings(), target=await completedWeek(cfg.timezone,minutesOf(cfg.close_time)); return json({week_start:target.start,week_end:target.end,rows:rankRows(await leaderboardForWeek(target.start,target.end))});
+  }
+
+  if (path === "/admin/reflections" && req.method === "GET") {
+    await session(req, "admin");
+    const studentId = text(url.searchParams.get("student_id"), 80);
+    if (!studentId) return bad("請先選擇學生。", 422);
+    const { data: student, error: studentError } = await db.from("students").select("id,display_name,active").eq("id", studentId).maybeSingle();
+    if (studentError) throw studentError;
+    if (!student) return bad("找不到這位學生。", 404);
+    return json({
+      student,
+      ...(await getStudentReflections(studentId))
+    });
+  }
+
+  if (path === "/admin/reflections/notes" && req.method === "POST") {
+    await session(req, "admin");
+    const studentId = text(body.student_id, 80);
+    const noteType = text(body.note_type, 20);
+    const content = text(body.content, 5000);
+    if (!studentId || !["tianyan", "ganying"].includes(noteType) || !content) return bad("心得留言資料不完整。", 422);
+    const { error } = await db.from("student_notes").insert({ student_id: studentId, note_type: noteType, content });
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
+  const noteMatch = path.match(/^\/admin\/reflections\/notes\/([0-9a-f-]+)$/i);
+  if (noteMatch && req.method === "PUT") {
+    await session(req, "admin");
+    const content = text(body.content, 5000);
+    if (!content) return bad("留言不能留白。", 422);
+    const { error } = await db.from("student_notes").update({ content, updated_at: new Date().toISOString() }).eq("id", noteMatch[1]);
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
+  if (noteMatch && req.method === "DELETE") {
+    await session(req, "admin");
+    const { error } = await db.from("student_notes").delete().eq("id", noteMatch[1]);
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
+  const adminGoalMatch = path.match(/^\/admin\/reflections\/goals\/(\d+)$/);
+  if (adminGoalMatch && req.method === "PUT") {
+    await session(req, "admin");
+    const studentId = text(body.student_id, 80);
+    const slot = Number(adminGoalMatch[1]);
+    const answer = text(body.answer_text, 2000);
+    if (!studentId || !Number.isInteger(slot) || slot < 1 || slot > goalSlots) return bad("目標資料不完整。", 422);
+
+    const { data: existing, error: ge } = await db.from("student_goals")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("slot", slot)
+      .maybeSingle();
+    if (ge) throw ge;
+
+    const payload:any = {
+      student_id: studentId,
+      slot,
+      answer_text: answer,
+      updated_at: new Date().toISOString(),
+      updated_by: "admin"
+    };
+
+    if (existing) {
+      const { error } = await db.from("student_goals").update(payload).eq("id", existing.id);
+      if (error) throw error;
+    } else {
+      payload.first_answered_at = answer ? new Date().toISOString() : null;
+      payload.edit_count = 0;
+      const { error } = await db.from("student_goals").insert(payload);
+      if (error) throw error;
+    }
+    return json({ ok: true });
+  }
+
+  const adminQuestionMatch = path.match(/^\/admin\/reflections\/questions\/([0-9a-f-]+)$/i);
+  if (adminQuestionMatch && req.method === "PUT") {
+    await session(req, "admin");
+    const answer = text(body.admin_answer, 5000);
+    const update:any = {
+      admin_answer: answer,
+      updated_at: new Date().toISOString(),
+      answered_at: answer ? new Date().toISOString() : null
+    };
+    const { error } = await db.from("student_questions").update(update).eq("id", adminQuestionMatch[1]);
+    if (error) throw error;
+    return json({ ok: true });
   }
 
   if (path === "/logout" && req.method === "POST") {
