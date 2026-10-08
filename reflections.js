@@ -24,8 +24,8 @@
           <div class="goal-prompt">為什麼學法？</div>
           <textarea class="field goal-answer" data-slot="${g.slot}" rows="3" maxlength="2000" ${(answered && left===0)?'readonly':''} placeholder="${answered?'':'寫下第 '+g.slot+' 個答案'}">${esc(g.answer_text||'')}</textarea>
           <div class="goal-meta">
-            <span>${answered?'最後更新：'+fmt(g.updated_at):'尚未回答'}</span>
-            <span>${answered?'剩餘修改：'+left+' 次':'第一次回答後可再修改 2 次'}</span>
+            <span>${answered?'首次回答：'+fmt(g.first_answered_at || g.updated_at):'尚未回答'}</span>
+            <span>${answered ? ((g.first_answered_at && g.updated_at && g.first_answered_at!==g.updated_at)?'最後更新：'+fmt(g.updated_at)+'｜':'')+'剩餘修改：'+left+' 次' : '第一次回答後可再修改 2 次'}</span>
           </div>
         </div>
         <button class="secondary-btn goal-save" data-slot="${g.slot}" ${answered&&left===0?'disabled':''}>${answered?'儲存修改':'提交答案'}</button>
