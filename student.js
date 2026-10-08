@@ -7,6 +7,7 @@
   const loginError = document.getElementById('login-error');
   const greeting = document.getElementById('student-greeting');
   const notice = document.getElementById('student-notice');
+  const dateEl = document.getElementById('question-date');
   const stateEl = document.getElementById('question-state');
   const textEl = document.getElementById('question-text');
   const optionsEl = document.getElementById('options');
@@ -57,6 +58,7 @@
 
   function renderQuestion(data){
     todayData = data;
+    dateEl.textContent = data.question_date ? formatDate(data.question_date) : '';
     answerMessage.classList.add('hidden');
     optionsEl.innerHTML='';
     if (data.state === 'no_question'){
@@ -86,6 +88,11 @@
       answerMessage.classList.remove('hidden');
       answerMessage.textContent='今日已提交答案，結算後才會公布結果。';
     }
+  }
+
+  function formatDate(value){
+    const m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(value || ''));
+    return m ? `${m[1]}年${m[2]}月${m[3]}日` : '';
   }
 
   async function loadToday(){
