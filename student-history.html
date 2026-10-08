@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>作答簿｜每日學堂</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="paper-bg">
+  <main class="page-shell compact-shell">
+    <header class="student-header">
+      <div>
+        <p class="eyebrow">每日學堂</p>
+        <h1>作答簿</h1>
+      </div>
+      <div class="header-actions">
+        <a href="index.html">返回今日題目</a>
+        <a href="reflections.html">心得區</a>
+        <button id="history-logout" class="text-btn">離開學堂</button>
+      </div>
+    </header>
+
+    <div id="history-auth" class="notice hidden"></div>
+    <div id="history-notice" class="notice hidden"></div>
+
+    <section class="panel">
+      <div id="history-content">載入中…</div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>
