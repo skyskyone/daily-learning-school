@@ -49,7 +49,7 @@ h2{font-size:clamp(24px,4vw,36px);letter-spacing:.06em}
 .header-actions{display:flex;align-items:center;gap:14px;white-space:nowrap}
 .question-card{margin-top:26px;padding:56px 34px 40px;text-align:center;min-height:410px;display:flex;flex-direction:column;justify-content:center}
 .question-ribbon{position:absolute;left:50%;top:-17px;transform:translateX(-50%);background:var(--seal);color:#fff7ea;padding:8px 26px;border:2px solid var(--paper);outline:1px solid var(--seal);letter-spacing:.2em}
-.question-state{font-size:13px;color:var(--muted);letter-spacing:.14em;margin-bottom:24px}
+.question-meta{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:24px}.question-date,.question-state{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:5px 11px;border:1px solid rgba(185,168,137,.8);background:rgba(248,241,221,.76);color:var(--muted);font-size:13px;letter-spacing:.12em;white-space:nowrap}.question-state{margin:0}.question-date{color:var(--seal);font-weight:700}
 .question-text{font-size:clamp(26px,5vw,42px);line-height:1.7;margin:0 auto 30px;max-width:760px;font-weight:700}
 .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:720px;width:100%;margin:0 auto}
 .option-btn{min-height:90px;border:1px solid var(--line);background:#f8f1dd;color:var(--ink);padding:18px 20px;text-align:left;position:relative;transition:.18s}
@@ -72,6 +72,10 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
 .badge.ok{border-color:#83916b;background:#edf2df;color:#42512f}
 .badge.no{border-color:#bd7568;background:#fae8e2;color:#79291f}
 @media (max-width:680px){
+  .question-meta{gap:8px;margin-bottom:20px}.question-date,.question-state{font-size:12px;letter-spacing:.08em;padding:4px 9px}
+  .goal-card{grid-template-columns:36px 1fr}.goal-number{width:32px;height:32px}.goal-save{grid-column:2;width:100%}.goal-meta{gap:6px}
+  .question-thread{grid-template-columns:1fr}.answer-side{border-left:0;border-top:1px solid rgba(185,168,137,.7)}
+
   .page-shell{width:min(100% - 20px,920px);padding-top:52px}
   .login-panel{padding:32px 22px;margin-top:6vh}
   .seal{right:12px;top:12px;width:42px;height:42px;font-size:18px}
@@ -80,3 +84,5 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   .options-grid,.quick-links{grid-template-columns:1fr}
   .question-card{padding:50px 18px 28px;min-height:360px}
 }
+
+.reflection-panel{padding:30px}.reflection-section{padding:10px 0 34px}.reflection-section+.reflection-section{border-top:1px solid rgba(185,168,137,.55);padding-top:30px}.reflection-section .section-heading{margin-bottom:16px}.goal-intro{padding:12px 16px;border:1px solid rgba(185,168,137,.65);background:#f7f0df;color:var(--muted);line-height:1.9;margin-bottom:16px}.note-list{display:grid;gap:12px}.note-card{border:1px solid var(--line);background:#fbf7ea;padding:17px 18px}.note-card-copy{font-size:18px;line-height:1.9}.note-card-date,.goal-meta,.thread-date{font-size:12px;color:var(--muted);margin-top:10px}.goal-list{display:grid;gap:12px}.goal-card{display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:start;border:1px solid var(--line);background:#fbf7ea;padding:14px}.goal-number{width:38px;height:38px;border:2px solid var(--seal);color:var(--seal);display:grid;place-items:center;font-weight:700}.goal-main{min-width:0}.goal-prompt{font-size:15px;color:var(--muted);margin-bottom:7px}.goal-answer{margin:0;min-height:92px;resize:vertical}.goal-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.goal-save{min-width:92px}.question-thread-list{display:grid;gap:14px;margin-top:18px}.reflection-form{display:grid;gap:12px}.question-thread{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);background:#fbf7ea}.question-side,.answer-side{padding:18px;min-width:0}.answer-side{border-left:1px solid rgba(185,168,137,.7);background:#f6eedb}.thread-label{font-size:13px;color:var(--seal);letter-spacing:.14em;margin-bottom:10px;font-weight:700}.thread-copy{line-height:1.9;font-size:17px;word-break:break-word}.empty-state{border:1px dashed var(--line);padding:18px;color:var(--muted);text-align:center;background:rgba(255,250,236,.55)}
