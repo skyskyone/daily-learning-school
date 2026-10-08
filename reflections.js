@@ -1,0 +1,90 @@
+(function(){
+  const auth = document.getElementById('reflection-auth');
+  const notice = document.getElementById('reflection-notice');
+  const tianyan = document.getElementById('tianyan-list');
+  const ganying = document.getElementById('ganying-list');
+  const goals = document.getElementById('goals-list');
+  const questions = document.getElementById('student-questions-list');
+  const questionForm = document.getElementById('student-question-form');
+  const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const show=(el,msg,type)=>{el.textContent=msg||'';el.className='notice '+(type||'')+(msg?'':' hidden');};
+  const fmt=v=>v?new Date(v).toLocaleDateString('zh-Hant',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
+
+  function renderNotes(target,items,empty){
+    target.innerHTML = items.length ? items.map(x=>`<article class="note-card"><div class="note-card-copy">${esc(x.content).replace(/\n/g,'<br>')}</div><div class="note-card-date">${fmt(x.created_at)}</div></article>`).join('') : `<div class="empty-state">${empty}</div>`;
+  }
+
+  function renderGoals(items){
+    goals.innerHTML = items.map(g=>{
+      const answered=!!String(g.answer_text||'').trim();
+      const left=Math.max(0,2-(Number(g.edit_count)||0));
+      return `<article class="goal-card ${answered?'answered':''}">
+        <div class="goal-number">${g.slot}</div>
+        <div class="goal-main">
+          <div class="goal-prompt">為什麼學法？</div>
+          <textarea class="field goal-answer" data-slot="${g.slot}" rows="3" maxlength="2000" ${(answered && left===0)?'readonly':''} placeholder="${answered?'':'寫下第 '+g.slot+' 個答案'}">${esc(g.answer_text||'')}</textarea>
+          <div class="goal-meta">
+            <span>${answered?'最後更新：'+fmt(g.updated_at):'尚未回答'}</span>
+            <span>${answered?'剩餘修改：'+left+' 次':'第一次回答後可再修改 2 次'}</span>
+          </div>
+        </div>
+        <button class="secondary-btn goal-save" data-slot="${g.slot}" ${answered&&left===0?'disabled':''}>${answered?'儲存修改':'提交答案'}</button>
+      </article>`;
+    }).join('');
+    document.querySelectorAll('.goal-save').forEach(btn=>btn.addEventListener('click',saveGoal));
+  }
+
+  async function saveGoal(e){
+    const btn=e.currentTarget;
+    const slot=btn.dataset.slot;
+    const textarea=document.querySelector(`.goal-answer[data-slot="${slot}"]`);
+    const answer=textarea.value.trim();
+    if(!answer){show(notice,'請先寫下答案。','error');return;}
+    btn.disabled=true;
+    try{await api.put('/student/goals/'+slot,{answer_text:answer});show(notice,'第 '+slot+' 項目標已保存。','success');await load();}
+    catch(err){show(notice,err.message,'error');btn.disabled=false;}
+  }
+
+  function renderQuestions(items){
+    questions.innerHTML = items.length ? items.map(x=>`<article class="question-thread">
+      <div class="question-side"><div class="thread-label">我的問題</div><div class="thread-copy">${esc(x.question_text).replace(/\n/g,'<br>')}</div><div class="thread-date">${fmt(x.created_at)}</div></div>
+      <div class="answer-side"><div class="thread-label">老師解答</div><div class="thread-copy">${x.admin_answer?esc(x.admin_answer).replace(/\n/g,'<br>'):'尚未解答'}</div><div class="thread-date">${x.answered_at?'解答日期：'+fmt(x.answered_at):'等待老師回覆'}</div></div>
+    </article>`).join('') : '<div class="empty-state">目前尚未提出問題。</div>';
+  }
+
+  async function load(){
+    try{
+      const d=await api.get('/student/reflections');
+      renderNotes(tianyan,d.notes.filter(x=>x.note_type==='tianyan'),'老師尚未留下天眼。');
+      renderNotes(ganying,d.notes.filter(x=>x.note_type==='ganying'),'老師尚未留下感應。');
+      renderGoals(d.goals);
+      renderQuestions(d.questions);
+    }catch(err){
+      if(err.status===401){api.clearToken();location.href='index.html';return;}
+      show(notice,err.message,'error');
+    }
+  }
+
+  questionForm.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const input=document.getElementById('student-question-text');
+    const value=input.value.trim();
+    if(!value)return show(notice,'請先寫下你的問題。','error');
+    try{
+      await api.post('/student/questions',{question_text:value});
+      input.value='';
+      show(notice,'問題已送出，等待老師解答。','success');
+      await load();
+    }catch(err){show(notice,err.message,'error');}
+  });
+
+  document.getElementById('reflection-logout').addEventListener('click',()=>{api.clearToken();location.href='index.html';});
+
+  if(api.tokenRole()!=='student'){
+    auth.textContent='請先從首頁登入學生身份。';
+    auth.className='notice error';
+    questionForm.classList.add('hidden');
+  }else{
+    load();
+  }
+})();
