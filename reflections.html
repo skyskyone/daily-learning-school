@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>心得區｜每日學堂</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="paper-bg">
+  <main class="page-shell compact-shell">
+    <header class="student-header">
+      <div>
+        <p class="eyebrow">每日學堂</p>
+        <h1>心得區</h1>
+      </div>
+      <div class="header-actions">
+        <a href="index.html">返回今日題目</a>
+        <button id="reflection-logout" class="text-btn">離開學堂</button>
+      </div>
+    </header>
+
+    <div id="reflection-auth" class="notice hidden"></div>
+    <div id="reflection-notice" class="notice hidden"></div>
+
+    <section class="panel reflection-panel">
+      <div class="reflection-section">
+        <div class="section-heading"><div><p class="eyebrow">Teacher's Notes</p><h2>天眼</h2></div></div>
+        <div id="tianyan-list" class="note-list"></div>
+      </div>
+
+      <div class="reflection-section">
+        <div class="section-heading"><div><p class="eyebrow">Teacher's Notes</p><h2>感應</h2></div></div>
+        <div id="ganying-list" class="note-list"></div>
+      </div>
+
+      <div class="reflection-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">My Goals</p><h2>目標</h2></div>
+        </div>
+        <div class="goal-intro">為什麼學法？請分十次回答。每一項都可以逐個完成；第一次回答後，每一項學生最多還有兩次修改機會。</div>
+        <div id="goals-list" class="goal-list"></div>
+      </div>
+
+      <div class="reflection-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">My Questions</p><h2>問題區</h2><p class="muted">學法／打坐疑問</p></div>
+        </div>
+        <form id="student-question-form" class="reflection-form">
+          <textarea id="student-question-text" class="field" rows="4" maxlength="3000" placeholder="請寫下你的學法或打坐疑問"></textarea>
+          <button class="primary-btn" type="submit">提出問題</button>
+        </form>
+        <div id="student-questions-list" class="question-thread-list"></div>
+      </div>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="reflections.js"></script>
+</body>
+</html>
