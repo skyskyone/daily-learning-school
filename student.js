@@ -64,7 +64,7 @@
     answerMessage.classList.add('hidden');
     optionsEl.innerHTML='';
     if (data.state === 'no_question'){
-      stateEl.textContent='今日尚未安排題目'; textEl.textContent='敬候出題。'; return;
+      stateEl.textContent='今日尚未安排題目'; textEl.textContent='敬候出題'; return;
     }
     if (data.state === 'not_open'){
       stateEl.textContent = `今日題將於 ${data.publish_time} 開放`;
