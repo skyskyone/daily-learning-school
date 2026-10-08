@@ -22,35 +22,66 @@
     <div id="reflection-auth" class="notice hidden"></div>
     <div id="reflection-notice" class="notice hidden"></div>
 
-    <section class="panel reflection-panel">
-      <div class="reflection-section">
-        <div class="section-heading"><div><p class="eyebrow">Teacher's Notes</p><h2>天眼</h2></div></div>
+    <section id="reflection-home" class="panel reflection-panel">
+      <div class="reflection-intro">這裡是你的學習心得空間。四個區域分開保存，只有你本人能查看自己的「目標」與「問題區」，老師則可以為你留下「天眼」與「感應」。</div>
+      <div class="reflection-menu">
+        <button class="reflection-menu-card" data-view="tianyan">
+          <span class="reflection-menu-title">天眼</span>
+          <span class="reflection-menu-desc">老師的學法心得、觀察與經驗</span>
+          <span class="reflection-menu-enter">進入查看</span>
+        </button>
+        <button class="reflection-menu-card" data-view="ganying">
+          <span class="reflection-menu-title">感應</span>
+          <span class="reflection-menu-desc">老師在修習中的心得與經驗</span>
+          <span class="reflection-menu-enter">進入查看</span>
+        </button>
+        <button class="reflection-menu-card" data-view="goals">
+          <span class="reflection-menu-title">目標</span>
+          <span class="reflection-menu-desc">為什麼學法？十項思考，可一次或分開完成</span>
+          <span class="reflection-menu-enter">進入回答</span>
+        </button>
+        <button class="reflection-menu-card" data-view="questions">
+          <span class="reflection-menu-title">問題區</span>
+          <span class="reflection-menu-desc">學法／打坐疑問，老師在右側解答</span>
+          <span class="reflection-menu-enter">進入提問</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="reflection-view" class="panel reflection-panel hidden">
+      <div class="reflection-view-head">
+        <button id="reflection-back" class="text-btn">← 返回心得區</button>
+        <div id="reflection-view-title" class="reflection-view-title"></div>
+      </div>
+
+      <section id="view-tianyan" class="reflection-view-section hidden">
+        <h2>天眼</h2>
+        <p class="reflection-view-desc">老師整理的學法心得、觀察與實際經驗。</p>
         <div id="tianyan-list" class="note-list"></div>
-      </div>
+      </section>
 
-      <div class="reflection-section">
-        <div class="section-heading"><div><p class="eyebrow">Teacher's Notes</p><h2>感應</h2></div></div>
+      <section id="view-ganying" class="reflection-view-section hidden">
+        <h2>感應</h2>
+        <p class="reflection-view-desc">老師在學法、打坐及修習過程中的心得與經驗。</p>
         <div id="ganying-list" class="note-list"></div>
-      </div>
+      </section>
 
-      <div class="reflection-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">My Goals</p><h2>目標</h2></div>
-        </div>
-        <div class="goal-intro">為什麼學法？請分十次回答。每一項都可以逐個完成；第一次回答後，每一項學生最多還有兩次修改機會。</div>
+      <section id="view-goals" class="reflection-view-section hidden">
+        <h2>目標</h2>
+        <p class="reflection-view-desc">為什麼學法？以下十個欄位可以一次完成，也可以分開回答。</p>
         <div id="goals-list" class="goal-list"></div>
-      </div>
+        <button id="save-all-goals" class="primary-btn reflection-save-all">儲存已填答案</button>
+      </section>
 
-      <div class="reflection-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">My Questions</p><h2>問題區</h2><p class="muted">學法／打坐疑問</p></div>
-        </div>
+      <section id="view-questions" class="reflection-view-section hidden">
+        <h2>問題區</h2>
+        <p class="reflection-view-desc">描述你的學法／打坐疑問。左邊是你的問題，右邊是老師解答。</p>
         <form id="student-question-form" class="reflection-form">
           <textarea id="student-question-text" class="field" rows="4" maxlength="3000" placeholder="請寫下你的學法或打坐疑問"></textarea>
           <button class="primary-btn" type="submit">提出問題</button>
         </form>
         <div id="student-questions-list" class="question-thread-list"></div>
-      </div>
+      </section>
     </section>
   </main>
   <script src="config.js"></script>
