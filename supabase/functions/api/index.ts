@@ -186,6 +186,38 @@ async function leaderboardForWeek(start: string, end: string) {
   }).sort((a:any,b:any)=>b.correct_count-a.correct_count || b.answered_count-a.answered_count || a.display_name.localeCompare(b.display_name));
 }
 
+async function leaderboardForQuestionList(questions:any[]) {
+  const ids = questions.map(q => q.id);
+  const { data: students, error: se } = await db.from("students").select("id,display_name").eq("active",true).order("display_name");
+  if (se) throw se;
+  const { data: subs, error: ae } = ids.length
+    ? await db.from("submissions").select("student_id,question_id,choice").in("question_id",ids)
+    : { data: [], error: null };
+  if (ae) throw ae;
+
+  const qMap = new Map(questions.map(q => [q.id, q.correct_option]));
+  return (students || []).map((s:any) => {
+    const mine = (subs || []).filter((x:any) => x.student_id === s.id);
+    const correct = mine.reduce((n:number,x:any) => n + (qMap.get(x.question_id) === x.choice ? 1 : 0), 0);
+    return {
+      display_name: s.display_name,
+      correct_count: correct,
+      answered_count: mine.length,
+      total_questions: questions.length,
+      accuracy: mine.length ? Number((correct / mine.length * 100).toFixed(1)) : 0
+    };
+  }).sort((a:any,b:any) =>
+    b.correct_count-a.correct_count ||
+    b.answered_count-a.answered_count ||
+    a.display_name.localeCompare(b.display_name)
+  );
+}
+
+function monthLabel(month:string) {
+  const m = /^(\d{4})-(\d{2})$/.exec(month);
+  return m ? `${m[1]}年${Number(m[2])}月` : month;
+}
+
 function rankRows(rows:any[]) { let last:any = null, rank = 0; return rows.map((r,i)=>{if(r.correct_count!==last){rank=i+1;last=r.correct_count;}return {...r,rank};}); }
 
 const goalSlots = 10;
@@ -309,6 +341,48 @@ async function route(req: Request) {
     const cfg=await settings(); const close=minutesOf(cfg.close_time); const local=localNow(cfg.timezone); const week=currentWeek(local.date); const currentDone=local.date>week.end||(local.date===week.end&&local.minutes>=close); const target=currentDone?week:{start:addDays(week.start,-7),end:addDays(week.end,-7)};
     const {data:checkQs,error:qe}=await db.from("questions").select("id,question_date").gte("question_date",target.start).lte("question_date",target.end); if(qe)throw qe;
     return json({settled:true,week_start:target.start,week_end:target.end,rows:rankRows(await leaderboardForWeek(target.start,target.end)),has_questions:(checkQs||[]).length>0});
+  }
+
+  if (path === "/student/monthly-leaderboard" && req.method === "GET") {
+    const cfg = await settings();
+    const local = localNow(cfg.timezone);
+    const closeMinutes = minutesOf(cfg.close_time);
+    const currentMonth = local.date.slice(0, 7);
+    const requestedMonth = text(url.searchParams.get("month") || currentMonth, 7);
+
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth)) return bad("月份格式不正確。", 422);
+    if (requestedMonth > currentMonth) return bad("尚未到該月份，不能查看排行榜。", 422);
+
+    const { data: allQuestions, error: qe } = await db.from("questions")
+      .select("id,question_date,correct_option")
+      .lte("question_date", local.date)
+      .order("question_date", { ascending: false })
+      .limit(5000);
+    if (qe) throw qe;
+
+    const settledQuestions = (allQuestions || []).filter((q:any) =>
+      q.question_date < local.date ||
+      (q.question_date === local.date && local.minutes >= closeMinutes)
+    );
+
+    const monthSet = new Set<string>([currentMonth]);
+    settledQuestions.forEach((q:any) => monthSet.add(q.question_date.slice(0, 7)));
+    const months = Array.from(monthSet).filter(m => m <= currentMonth).sort((a,b) => b.localeCompare(a));
+    const selectedQuestions = settledQuestions
+      .filter((q:any) => q.question_date.slice(0, 7) === requestedMonth)
+      .sort((a:any,b:any) => a.question_date.localeCompare(b.question_date));
+    const rows = selectedQuestions.length
+      ? rankRows(await leaderboardForQuestionList(selectedQuestions))
+      : [];
+
+    return json({
+      month: requestedMonth,
+      month_label: monthLabel(requestedMonth),
+      months: months.map(month => ({ month, label: monthLabel(month) })),
+      has_questions: selectedQuestions.length > 0,
+      settled_questions: selectedQuestions.length,
+      rows
+    });
   }
 
   if (path === "/student/reflections" && req.method === "GET") {
