@@ -59,52 +59,14 @@
     }catch(err){show(notice,err.message,'error');}
   }
 
-  function renderAdminNotes(items,targetId,kind){
-    const el=document.getElementById(targetId);
-    const title=kind==='tianyan'?'天眼':'感應';
-    el.innerHTML=items.length?items.map(x=>`<div class="admin-note-item">
-      <div class="admin-note-body"><div class="admin-note-kind">${title}</div><div>${esc(x.content).replace(/\n/g,'<br>')}</div><div class="tiny-note">${new Date(x.created_at).toLocaleString('zh-Hant')}</div></div>
-      <div class="admin-note-actions"><button class="text-btn note-edit" data-id="${x.id}" data-content="${encodeURIComponent(x.content)}">編輯</button><button class="text-btn note-delete" data-id="${x.id}">刪除</button></div>
-    </div>`).join(''):'<div class="empty-state">目前沒有留言。</div>';
-    el.querySelectorAll('.note-edit').forEach(b=>b.addEventListener('click',()=>editAdminNote(b.dataset.id,decodeURIComponent(b.dataset.content))));
-    el.querySelectorAll('.note-delete').forEach(b=>b.addEventListener('click',()=>deleteAdminNote(b.dataset.id)));
-  }
-
   async function loadAdminReflections(studentId){
     if(!studentId){document.getElementById('reflection-admin-content').classList.add('hidden');return;}
     try{
       const d=await api.get('/admin/reflections?student_id='+encodeURIComponent(studentId));
       document.getElementById('reflection-admin-content').classList.remove('hidden');
-      renderAdminNotes(d.notes.filter(x=>x.note_type==='tianyan'),'tianyan-admin-list','tianyan');
-      renderAdminNotes(d.notes.filter(x=>x.note_type==='ganying'),'ganying-admin-list','ganying');
       renderAdminGoals(d.goals);
       renderAdminQuestions(d.questions);
     }catch(err){show(notice,err.message,'error');}
-  }
-
-  async function saveAdminNote(kind){
-    const studentId=document.getElementById('reflection-student-select').value;
-    const input=document.getElementById(kind+'-input');
-    const content=input.value.trim();
-    if(!studentId)return show(notice,'請先選擇學生。','error');
-    if(!content)return show(notice,'請輸入留言內容。','error');
-    try{await api.post('/admin/reflections/notes',{student_id:studentId,note_type:kind,content});input.value='';show(notice,(kind==='tianyan'?'天眼':'感應')+'已留下。','success');await loadAdminReflections(studentId);}
-    catch(err){show(notice,err.message,'error');}
-  }
-
-  async function editAdminNote(id,current){
-    const content=prompt('修改留言：',current||'');
-    if(content===null)return;
-    const value=content.trim();
-    if(!value)return alert('留言不能留白。');
-    try{await api.put('/admin/reflections/notes/'+id,{content:value});show(notice,'留言已更新。','success');await loadAdminReflections(document.getElementById('reflection-student-select').value);}
-    catch(err){show(notice,err.message,'error');}
-  }
-
-  async function deleteAdminNote(id){
-    if(!confirm('確定刪除這則留言？'))return;
-    try{await api.delete('/admin/reflections/notes/'+id);show(notice,'留言已刪除。','success');await loadAdminReflections(document.getElementById('reflection-student-select').value);}
-    catch(err){show(notice,err.message,'error');}
   }
 
   function renderAdminGoals(items){
@@ -157,8 +119,6 @@
   document.getElementById('settings-form').addEventListener('submit',saveSettings);
   document.getElementById('load-results').addEventListener('click',loadResults);
   document.getElementById('reflection-student-select').addEventListener('change',e=>loadAdminReflections(e.target.value));
-  document.getElementById('tianyan-form').addEventListener('submit',e=>{e.preventDefault();saveAdminNote('tianyan');});
-  document.getElementById('ganying-form').addEventListener('submit',e=>{e.preventDefault();saveAdminNote('ganying');});
   tabs.forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.tab)));
   document.getElementById('new-student-pin').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,4));
   tryExisting();
