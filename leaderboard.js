@@ -23,7 +23,7 @@
       : '<p class="notice">這個月份目前沒有已結算的每日題目，因此尚未產生排名。</p>';
     const table=d.has_questions
       ? '<div class="table-wrap"><table class="monthly-table"><thead><tr><th>名次</th><th>學生</th><th>答對題數</th><th>正確率</th></tr></thead><tbody>'+
-        d.rows.map(x=>'<tr><td><span class="rank-number">'+x.rank+'</span></td><td>'+esc(x.display_name)+'</td><td>'+x.correct_count+'</td><td>'+x.answered_count+' / '+x.total_questions+'</td><td>'+x.accuracy+'%</td></tr>').join('')+
+        d.rows.map(x=>'<tr><td><span class="rank-number">'+x.rank+'</span></td><td>'+esc(x.display_name)+'</td><td>'+x.correct_count+'</td><td>'+x.accuracy+'%</td></tr>').join('')+
         '</tbody></table></div>'
       : '';
     root.innerHTML='<div class="monthly-board-heading"><p class="eyebrow">月度成績</p><h2>'+esc(d.month_label)+' 奮鬥榜</h2></div>'+lead+table+
