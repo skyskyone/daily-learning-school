@@ -367,7 +367,8 @@ async function route(req: Request) {
     if (se) throw se;
     const submitted = new Map((submissions || []).map((x:any) => [x.question_id, x.choice]));
 
-    const thresholds = [0, 1, 3, 6, 10, 15, 21, 28, 36];
+    // 慢速養成：連續答對時第 2 天起每日 +2 點；不間斷作答約 5 年抵達第九階。
+    const thresholds = [0, 14, 60, 180, 365, 730, 1460, 2555, 3650];
     const stageNames = [
       "一方靈土", "靈種入土", "破土萌芽", "初展雙葉", "幼苗初立",
       "小樹成形", "青木舒枝", "蒼樹成蔭", "世界樹"
