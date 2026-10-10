@@ -115,7 +115,6 @@
     const double=!!data.double_active;
     document.getElementById('tree-sun').classList.toggle('hidden',!double);
     document.getElementById('tree-moon').classList.toggle('hidden',double);
-    document.getElementById('tree-mood-row');
     const growthNote=document.getElementById('tree-growth-note');
     if(isMax){
       growthNote.textContent='世界樹已達第九階，樹身固定不再長高。往後每次結算答對，便會結出金色果實；連續答對加倍時，金果也會加倍。';
