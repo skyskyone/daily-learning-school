@@ -4,23 +4,15 @@
   const home = document.getElementById('reflection-home');
   const view = document.getElementById('reflection-view');
   const viewTitle = document.getElementById('reflection-view-title');
-  const tianyan = document.getElementById('tianyan-list');
-  const ganying = document.getElementById('ganying-list');
   const goals = document.getElementById('goals-list');
   const questions = document.getElementById('student-questions-list');
   const questionForm = document.getElementById('student-question-form');
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const show=(el,msg,type)=>{el.textContent=msg||'';el.className='notice '+(type||'')+(msg?'':' hidden');};
   const fmt=v=>v?new Date(v).toLocaleDateString('zh-Hant',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-  const titles={tianyan:'天眼',ganying:'感應',goals:'目標',questions:'問題區'};
+  const titles={goals:'目標',questions:'問題區'};
   let reflectionData=null;
   let loaded=false;
-
-  function renderNotes(target,items,empty){
-    target.innerHTML = items.length
-      ? items.map(x=>`<article class="note-card"><div class="note-card-copy">${esc(x.content).replace(/\n/g,'<br>')}</div><div class="note-card-date">${fmt(x.created_at)}</div></article>`).join('')
-      : `<div class="empty-state">${empty}</div>`;
-  }
 
   function renderGoals(items){
     goals.innerHTML = items.map(g=>{
@@ -49,8 +41,6 @@
 
   function renderData(d){
     reflectionData=d;
-    renderNotes(tianyan,d.notes.filter(x=>x.note_type==='tianyan'),'老師尚未留下天眼。');
-    renderNotes(ganying,d.notes.filter(x=>x.note_type==='ganying'),'老師尚未留下感應。');
     renderGoals(d.goals);
     renderQuestions(d.questions);
     loaded=true;
@@ -75,7 +65,7 @@
     home.classList.add('hidden');
     view.classList.remove('hidden');
     viewTitle.textContent=titles[name] || '心得區';
-    ['tianyan','ganying','goals','questions'].forEach(k=>document.getElementById('view-'+k).classList.toggle('hidden',k!==name));
+    ['goals','questions'].forEach(k=>document.getElementById('view-'+k).classList.toggle('hidden',k!==name));
     if(!loaded) await loadData();
   }
 
