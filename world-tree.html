@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>靈樹｜每日學堂</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="paper-bg world-tree-page">
+  <main class="page-shell compact-shell">
+    <header class="student-header">
+      <div>
+        <p class="eyebrow">每日學堂</p>
+        <h1>靈樹</h1>
+      </div>
+      <div class="header-actions">
+        <a href="index.html">返回今日題目</a>
+        <a href="reflections.html">心得區</a>
+        <a href="student-history.html">作答簿</a>
+        <button id="tree-logout" class="text-btn">離開學堂</button>
+      </div>
+    </header>
+    <div id="tree-auth" class="notice hidden"></div>
+    <div id="tree-notice" class="notice hidden"></div>
+    <section class="panel world-tree-panel">
+      <div class="tree-mood-row">
+        <div class="tree-mood-cell left">
+          <div id="tree-sun" class="tree-celestial tree-sun hidden"><span class="celestial-symbol">☀</span><span class="celestial-label">加倍成長</span></div>
+        </div>
+        <div class="tree-stage-heading">
+          <p class="eyebrow">靈木養成 · 九重境界</p>
+          <h2 id="tree-stage-name">一方靈土</h2>
+          <p id="tree-stage-caption" class="muted">從一方土地開始，靜候靈種。</p>
+        </div>
+        <div class="tree-mood-cell right">
+          <div id="tree-moon" class="tree-celestial tree-moon"><span class="celestial-symbol">☾</span><span class="celestial-label">正常成長</span></div>
+        </div>
+      </div>
+      <div class="world-tree-scene" id="world-tree-scene">
+        <div class="tree-cloud cloud-left">雲</div>
+        <div class="tree-cloud cloud-right">山</div>
+        <img id="tree-stage-image" class="tree-stage-image hidden" alt="靈樹成長階段">
+        <div id="tree-art-fallback" class="tree-art-fallback" data-stage="1" aria-label="靈樹示意圖">
+          <div class="tree-ridge ridge-back"></div>
+          <div class="tree-ridge ridge-front"></div>
+          <div class="tree-seed"></div>
+          <div class="tree-sprout"><span class="sprout-leaf sprout-left"></span><span class="sprout-leaf sprout-right"></span><span class="sprout-stem"></span></div>
+          <div class="tree-trunk"></div>
+          <div class="tree-branch tree-branch-left"></div>
+          <div class="tree-branch tree-branch-right"></div>
+          <div class="tree-canopy">
+            <i class="tree-leaf leaf-1"></i><i class="tree-leaf leaf-2"></i><i class="tree-leaf leaf-3"></i>
+            <i class="tree-leaf leaf-4"></i><i class="tree-leaf leaf-5"></i><i class="tree-leaf leaf-6"></i>
+            <i class="tree-leaf leaf-7"></i><i class="tree-leaf leaf-8"></i><i class="tree-leaf leaf-9"></i>
+          </div>
+        </div>
+        <div id="tree-hanging-fruits" class="tree-hanging-fruits" aria-label="樹上的金色果實"></div>
+        <div class="tree-ground"></div>
+        <div id="tree-ground-fruits" class="tree-ground-fruits" aria-label="落在地上的金色果實"></div>
+        <div class="tree-ground-label">靈土</div>
+      </div>
+      <div class="tree-progress-area">
+        <div class="tree-progress-heading"><span id="tree-stage-progress">階段 1 / 9</span><span id="tree-growth-value">成長值 0 / 36</span></div>
+        <div class="tree-progress-track"><div id="tree-progress-fill" class="tree-progress-fill" style="width:0%"></div></div>
+        <div id="tree-growth-note" class="tree-growth-note">答對每日題目，靈樹便會向前成長；答錯則暫停成長。</div>
+      </div>
+    </section>
+    <section class="tree-stats-grid">
+      <div class="tree-stat"><span>累計答對</span><strong id="tree-correct-days">0</strong><small>天</small></div>
+      <div class="tree-stat"><span>連續答對</span><strong id="tree-streak">0</strong><small>天</small></div>
+      <div class="tree-stat"><span>樹上金果</span><strong id="tree-hanging-count">0</strong><small>顆</small></div>
+      <div class="tree-stat"><span>落地金果</span><strong id="tree-fallen-count">0</strong><small>顆</small></div>
+    </section>
+    <section class="ancestor-quote-panel">
+      <div class="ancestor-seal">訓</div>
+      <div class="ancestor-heading">皇明祖訓</div>
+      <div id="ancestor-quote" class="ancestor-quote" aria-live="polite"></div>
+    </section>
+    <p class="tree-footnote">靈樹只會在每日題目結算後，依實際答題結果更新。達到第九階後，樹身不再長高，改以金果記錄後續精進；金果在樹上停留兩日後落入靈土。</p>
+  </main>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="world-tree.js"></script>
+</body>
+</html>
