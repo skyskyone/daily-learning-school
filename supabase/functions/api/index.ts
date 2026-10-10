@@ -344,6 +344,103 @@ async function route(req: Request) {
     return json({settled:true,week_start:target.start,week_end:target.end,rows:rankRows(await leaderboardForWeek(target.start,target.end)),has_questions:(checkQs||[]).length>0});
   }
 
+  if (path === "/student/world-tree" && req.method === "GET") {
+    const s = await session(req, "student");
+    const cfg = await settings();
+    const local = localNow(cfg.timezone);
+    const closeMinutes = minutesOf(cfg.close_time);
+
+    const { data: allQuestions, error: qe } = await db.from("questions")
+      .select("id,question_date,correct_option")
+      .lte("question_date", local.date)
+      .order("question_date", { ascending: true })
+      .limit(5000);
+    if (qe) throw qe;
+
+    const settledQuestions = (allQuestions || []).filter((q:any) =>
+      q.question_date < local.date ||
+      (q.question_date === local.date && local.minutes >= closeMinutes)
+    );
+    const { data: submissions, error: se } = await db.from("submissions")
+      .select("question_id,choice")
+      .eq("student_id", s.student_id);
+    if (se) throw se;
+    const submitted = new Map((submissions || []).map((x:any) => [x.question_id, x.choice]));
+
+    const thresholds = [0, 1, 3, 6, 10, 15, 21, 28, 36];
+    const stageNames = [
+      "一方靈土", "靈種入土", "破土萌芽", "初展雙葉", "幼苗初立",
+      "小樹成形", "青木舒枝", "蒼樹成蔭", "世界樹"
+    ];
+    let growth = 0;
+    let stage = 1;
+    let streak = 0;
+    let previousCorrectDate:string | null = null;
+    let correctDays = 0;
+    const fruitDates:string[] = [];
+
+    for (const q of settledQuestions) {
+      const choice = submitted.get(q.id);
+      const correct = choice === q.correct_option;
+      if (!correct) {
+        streak = 0;
+        previousCorrectDate = null;
+        continue;
+      }
+
+      streak = previousCorrectDate && addDays(previousCorrectDate, 1) === q.question_date
+        ? streak + 1
+        : 1;
+      previousCorrectDate = q.question_date;
+      correctDays += 1;
+      const gain = streak >= 2 ? 2 : 1;
+
+      if (stage < 9) {
+        growth = Math.min(thresholds[8], growth + gain);
+        for (let i = thresholds.length - 1; i >= 0; i--) {
+          if (growth >= thresholds[i]) {
+            stage = i + 1;
+            break;
+          }
+        }
+      } else {
+        for (let i = 0; i < gain; i++) fruitDates.push(q.question_date);
+      }
+    }
+
+    const dayStamp = (date:string) => Date.parse(date + "T00:00:00Z");
+    let hangingFruits = 0;
+    let fallenFruits = 0;
+    const todayStamp = dayStamp(local.date);
+    for (const fruitDate of fruitDates) {
+      const age = Math.floor((todayStamp - dayStamp(fruitDate)) / 86400000);
+      if (age < 2) hangingFruits += 1;
+      else fallenFruits += 1;
+    }
+
+    const previousThreshold = thresholds[Math.max(0, stage - 1)];
+    const nextThreshold = stage >= 9 ? thresholds[8] : thresholds[stage];
+    const progressPercent = stage >= 9
+      ? 100
+      : Math.max(0, Math.min(100, Math.round(((growth - previousThreshold) / Math.max(1, nextThreshold - previousThreshold)) * 100)));
+
+    return json({
+      date: local.date,
+      stage,
+      stage_name: stageNames[stage - 1],
+      growth_value: growth,
+      final_growth_value: thresholds[8],
+      progress_percent: progressPercent,
+      correct_days: correctDays,
+      current_streak: streak,
+      double_active: streak >= 2,
+      max_stage: stage >= 9,
+      hanging_fruits: hangingFruits,
+      fallen_fruits: fallenFruits,
+      settled_days: settledQuestions.length
+    });
+  }
+
   if (path === "/student/monthly-leaderboard" && req.method === "GET") {
     const cfg = await settings();
     const local = localNow(cfg.timezone);
