@@ -200,6 +200,7 @@ async function leaderboardForQuestionList(questions:any[]) {
     const mine = (subs || []).filter((x:any) => x.student_id === s.id);
     const correct = mine.reduce((n:number,x:any) => n + (qMap.get(x.question_id) === x.choice ? 1 : 0), 0);
     return {
+      student_id: s.id,
       display_name: s.display_name,
       correct_count: correct,
       answered_count: mine.length,
@@ -365,9 +366,95 @@ async function route(req: Request) {
       (q.question_date === local.date && local.minutes >= closeMinutes)
     );
 
+    const historicalMonths = Array.from(new Set(
+      settledQuestions
+        .map((q:any) => q.question_date.slice(0, 7))
+        .filter((month:string) => month < currentMonth)
+    )).sort((a,b) => b.localeCompare(a));
+
+    // First request after a month ends archives its final ranking. Existing
+    // archives are never recalculated, even if older questions are edited later.
+    const { data: existingArchives, error: archiveReadError } = await db
+      .from("monthly_leaderboard_archives")
+      .select("month,month_label,question_count,settled_at")
+      .order("month", { ascending: false })
+      .limit(5000);
+    if (archiveReadError) throw archiveReadError;
+
+    const archived = new Set((existingArchives || []).map((x:any) => x.month));
+    for (const oldMonth of historicalMonths) {
+      if (archived.has(oldMonth)) continue;
+      const monthQuestions = settledQuestions
+        .filter((q:any) => q.question_date.slice(0, 7) === oldMonth)
+        .sort((a:any,b:any) => a.question_date.localeCompare(b.question_date));
+      const snapshotRows = rankRows(await leaderboardForQuestionList(monthQuestions)).map((row:any) => ({
+        month: oldMonth,
+        student_id: row.student_id,
+        display_name: row.display_name,
+        rank: row.rank,
+        correct_count: row.correct_count,
+        answered_count: row.answered_count,
+        total_questions: row.total_questions,
+        accuracy: row.accuracy
+      }));
+      if (snapshotRows.length) {
+        const { error: rowWriteError } = await db.from("monthly_leaderboard_rows")
+          .upsert(snapshotRows, { onConflict: "month,student_id" });
+        if (rowWriteError) throw rowWriteError;
+      }
+      const { error: archiveWriteError } = await db.from("monthly_leaderboard_archives").upsert({
+        month: oldMonth,
+        month_label: monthLabel(oldMonth),
+        question_count: monthQuestions.length,
+        settled_at: new Date().toISOString()
+      }, { onConflict: "month" });
+      if (archiveWriteError) throw archiveWriteError;
+    }
+
+    const { data: archives, error: archivesError } = await db
+      .from("monthly_leaderboard_archives")
+      .select("month,month_label,question_count,settled_at")
+      .order("month", { ascending: false })
+      .limit(5000);
+    if (archivesError) throw archivesError;
+
     const monthSet = new Set<string>([currentMonth]);
     settledQuestions.forEach((q:any) => monthSet.add(q.question_date.slice(0, 7)));
-    const months = Array.from(monthSet).filter(m => m <= currentMonth).sort((a,b) => b.localeCompare(a));
+    (archives || []).forEach((a:any) => monthSet.add(a.month));
+    const months = Array.from(monthSet)
+      .filter(m => m <= currentMonth)
+      .sort((a,b) => b.localeCompare(a))
+      .map(month => ({ month, label: monthLabel(month) }));
+
+    if (requestedMonth < currentMonth) {
+      const archive = (archives || []).find((x:any) => x.month === requestedMonth);
+      if (!archive) {
+        return json({
+          month: requestedMonth,
+          month_label: monthLabel(requestedMonth),
+          months,
+          has_questions: false,
+          settled_questions: 0,
+          rows: []
+        });
+      }
+      const { data: savedRows, error: savedRowsError } = await db
+        .from("monthly_leaderboard_rows")
+        .select("display_name,rank,correct_count,answered_count,total_questions,accuracy")
+        .eq("month", requestedMonth)
+        .order("rank", { ascending: true });
+      if (savedRowsError) throw savedRowsError;
+      return json({
+        month: requestedMonth,
+        month_label: archive.month_label,
+        months,
+        has_questions: archive.question_count > 0,
+        settled_questions: archive.question_count,
+        archived_at: archive.settled_at,
+        rows: savedRows || []
+      });
+    }
+
     const selectedQuestions = settledQuestions
       .filter((q:any) => q.question_date.slice(0, 7) === requestedMonth)
       .sort((a:any,b:any) => a.question_date.localeCompare(b.question_date));
@@ -378,7 +465,7 @@ async function route(req: Request) {
     return json({
       month: requestedMonth,
       month_label: monthLabel(requestedMonth),
-      months: months.map(month => ({ month, label: monthLabel(month) })),
+      months,
       has_questions: selectedQuestions.length > 0,
       settled_questions: selectedQuestions.length,
       rows
