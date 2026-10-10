@@ -468,7 +468,7 @@ async function route(req: Request) {
       months,
       has_questions: selectedQuestions.length > 0,
       settled_questions: selectedQuestions.length,
-      rows
+      rows: rows.map(({ student_id, ...row }:any) => row)
     });
   }
 
