@@ -621,6 +621,16 @@ async function route(req: Request) {
     return json({ ok: true, edit_count: nextCount });
   }
 
+  if (path === "/student/public-questions" && req.method === "GET") {
+    await session(req, "student");
+    const { data, error } = await db.from("student_questions")
+      .select("id,question_text,admin_answer,created_at,answered_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return json({ questions: data || [] });
+  }
+
   if (path === "/student/questions" && req.method === "POST") {
     const s = await session(req, "student");
     const questionText = text(body.question_text, 3000);
