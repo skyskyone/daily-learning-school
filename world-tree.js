@@ -5,6 +5,19 @@
   const fallback=document.getElementById('tree-art-fallback');
   const hanging=document.getElementById('tree-hanging-fruits');
   const groundFruits=document.getElementById('tree-ground-fruits');
+
+  // Use uploaded sun/moon PNGs when present; otherwise retain the built-in glyph.
+  document.querySelectorAll('.tree-celestial img.celestial-image').forEach(img=>{
+    const parent=img.parentElement;
+    const ready=()=>parent.classList.add('image-ready');
+    const failed=()=>parent.classList.remove('image-ready');
+    img.addEventListener('load',ready,{once:true});
+    img.addEventListener('error',failed,{once:true});
+    if(img.complete){
+      if(img.naturalWidth>0) ready();
+      else failed();
+    }
+  });
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const STAGE_IMAGES=[
     'assets/world-tree/stage-01-land.png',
