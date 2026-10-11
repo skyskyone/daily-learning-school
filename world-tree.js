@@ -72,28 +72,55 @@
     }
   }
 
+  function attachFruitImageFallbacks(root){
+    root.querySelectorAll('img.gold-fruit-image').forEach(img=>{
+      const parent=img.parentElement;
+      const ready=()=>parent.classList.add('image-ready');
+      const failed=()=>parent.classList.remove('image-ready');
+      img.addEventListener('load',ready,{once:true});
+      img.addEventListener('error',failed,{once:true});
+      if(img.complete){
+        if(img.naturalWidth>0) ready();
+        else failed();
+      }
+    });
+  }
+
   function renderFruits(hangingCount,fallenCount,isMaxStage){
     hanging.innerHTML='';
     groundFruits.innerHTML='';
+
+    // Each successful answer after reaching stage nine becomes one fruit.
+    // Fruit images are positioned individually, so the tree can accumulate them.
     if(isMaxStage && hangingCount>0){
       const visible=Math.min(hangingCount,HANG_POSITIONS.length);
       hanging.innerHTML=HANG_POSITIONS.slice(0,visible).map((p,i)=>
-        '<span class="tree-fruit-dot" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i*.08)+'s"></span>'
+        '<span class="tree-fruit-unit" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i*.08)+'s"><img class="gold-fruit-image" src="assets/world-tree/fruit-gold.png" alt=""><i class="gold-fruit-fallback"></i></span>'
       ).join('');
-      if(hangingCount>visible) hanging.innerHTML+='<span class="tree-fruit-extra">+'+(hangingCount-visible)+'</span>';
+      if(hangingCount>visible){
+        hanging.innerHTML+='<span class="tree-fruit-extra">+'+(hangingCount-visible)+'</span>';
+      }
+      attachFruitImageFallbacks(hanging);
     }
-    const visibleGround=Math.min(fallenCount,44);
+
+    // Each fallen fruit remains visible on the ground. Positions are stable,
+    // allowing the pile to grow as more fruit drops over time.
+    const visibleGround=Math.min(fallenCount,120);
     const dots=[];
     for(let i=0;i<visibleGround;i++){
-      const left=8+((i*37)%84);
-      const top=16+((i*23)%64);
-      const size=7+(i%4);
-      dots.push('<span class="ground-fruit-dot" style="left:'+left+'%;top:'+top+'%;width:'+size+'px;height:'+size+'px"></span>');
+      const left=7+((i*37)%86);
+      const top=8+((i*23)%78);
+      const size=13+(i%5);
+      const tilt=((i%7)-3)*5;
+      dots.push(
+        '<span class="ground-fruit-unit" style="left:'+left+'%;top:'+top+'%;width:'+size+'px;height:'+size+'px;transform:rotate('+tilt+'deg)"><img class="gold-fruit-image" src="assets/world-tree/fruit-gold.png" alt=""><i class="gold-fruit-fallback"></i></span>'
+      );
     }
     groundFruits.innerHTML=dots.join('');
     if(fallenCount>visibleGround){
-      groundFruits.innerHTML+='<span class="ground-fruit-extra">另有 '+(fallenCount-visibleGround)+' 顆</span>';
+      groundFruits.innerHTML+='<span class="ground-fruit-extra">+'+(fallenCount-visibleGround)+' 顆</span>';
     }
+    attachFruitImageFallbacks(groundFruits);
   }
 
   function render(data){
