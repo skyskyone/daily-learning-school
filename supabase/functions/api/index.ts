@@ -623,12 +623,29 @@ async function route(req: Request) {
 
   if (path === "/student/public-questions" && req.method === "GET") {
     await session(req, "student");
-    const { data, error } = await db.from("student_questions")
-      .select("id,question_text,admin_answer,created_at,answered_at")
+    const { data: questions, error } = await db.from("student_questions")
+      .select("id,student_id,question_text,admin_answer,created_at,answered_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
-    return json({ questions: data || [] });
+
+    const studentIds = Array.from(new Set((questions || []).map((q:any) => q.student_id)));
+    const { data: students, error: studentsError } = studentIds.length
+      ? await db.from("students").select("id,display_name").in("id", studentIds)
+      : { data: [], error: null };
+    if (studentsError) throw studentsError;
+    const names = new Map((students || []).map((s:any) => [s.id, s.display_name]));
+
+    return json({
+      questions: (questions || []).map((q:any) => ({
+        id: q.id,
+        question_text: q.question_text,
+        student_name: names.get(q.student_id) || "學生",
+        admin_answer: q.admin_answer,
+        created_at: q.created_at,
+        answered_at: q.answered_at
+      }))
+    });
   }
 
   if (path === "/student/questions" && req.method === "POST") {
