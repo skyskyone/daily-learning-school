@@ -276,3 +276,46 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   .world-tree-page .tree-sun{left:4%}
   .world-tree-page .tree-moon{right:4%}
 }
+
+/* 靈樹圖示素材：太陽/月亮移至樹景左上、右上；果實逐顆顯示 */
+.world-tree-page .tree-celestial{
+  top:18px;
+  bottom:auto;
+  display:flex;
+  width:64px;
+  height:64px;
+  min-width:0;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border:1px solid rgba(185,168,137,.5);
+  border-radius:50%;
+  background:rgba(255,250,236,.76);
+  box-shadow:0 3px 12px rgba(62,45,25,.1);
+  pointer-events:none;
+}
+.world-tree-page .tree-sun{left:18px;right:auto}
+.world-tree-page .tree-moon{right:18px;left:auto}
+.world-tree-page .celestial-image{width:82%;height:82%;object-fit:contain;display:none}
+.world-tree-page .celestial-fallback{font-size:42px;line-height:1;display:block}
+.world-tree-page .tree-celestial.image-ready .celestial-image{display:block}
+.world-tree-page .tree-celestial.image-ready .celestial-fallback{display:none}
+.world-tree-page .tree-sun .celestial-fallback{color:#bd8b19;text-shadow:0 0 12px rgba(236,190,56,.4)}
+.world-tree-page .tree-moon .celestial-fallback{color:#74758b;text-shadow:0 0 8px rgba(116,117,139,.2)}
+.tree-fruit-unit,.ground-fruit-unit{position:absolute;display:block;animation:fruit-sway 2.3s ease-in-out infinite alternate}
+.tree-fruit-unit{width:20px;height:25px;transform-origin:top center}
+.gold-fruit-image{width:100%;height:100%;object-fit:contain;display:none}
+.tree-fruit-unit.image-ready .gold-fruit-image,.ground-fruit-unit.image-ready .gold-fruit-image{display:block}
+.gold-fruit-fallback{position:absolute;left:20%;top:12%;width:65%;height:74%;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 33% 28%,#fff4a0,#e3b631 45%,#9d6d12 100%);border:1px solid rgba(143,94,14,.6);box-shadow:0 1px 3px rgba(74,48,14,.25)}
+.gold-fruit-fallback:before{content:"";position:absolute;left:50%;top:-5px;width:1px;height:6px;background:#6a7540;transform:rotate(-12deg)}
+.tree-fruit-unit.image-ready .gold-fruit-fallback,.ground-fruit-unit.image-ready .gold-fruit-fallback{display:none}
+.ground-fruit-unit{animation:none}
+.ground-fruit-unit .gold-fruit-fallback{left:0;top:0;width:100%;height:100%}
+.question-author{font-size:13px;color:var(--seal);font-weight:700;margin:-2px 0 8px;overflow-wrap:anywhere}
+@media(max-width:680px){
+  .world-tree-page .tree-celestial{top:12px;width:48px;height:48px}
+  .world-tree-page .tree-sun{left:12px}
+  .world-tree-page .tree-moon{right:12px}
+  .world-tree-page .celestial-fallback{font-size:32px}
+  .tree-fruit-unit{width:15px;height:20px}
+}
