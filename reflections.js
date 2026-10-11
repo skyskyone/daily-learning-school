@@ -35,7 +35,7 @@
   function renderQuestions(items){
     questions.innerHTML = items.length ? items.map(x =>
       '<article class="question-thread">' +
-        '<div class="question-side"><div class="thread-label">學生問題</div><div class="thread-copy">' + esc(x.question_text).replace(/\n/g,'<br>') + '</div><div class="thread-date">提出日期：' + fmt(x.created_at) + '</div></div>' +
+        '<div class="question-side"><div class="thread-label">學生問題</div><div class="question-author">提問學生：' + esc(x.student_name || '學生') + '</div><div class="thread-copy">' + esc(x.question_text).replace(/\n/g,'<br>') + '</div><div class="thread-date">提出日期：' + fmt(x.created_at) + '</div></div>' +
         '<div class="answer-side"><div class="thread-label">老師解答</div><div class="thread-copy">' + (x.admin_answer ? esc(x.admin_answer).replace(/\n/g,'<br>') : '尚未解答') + '</div><div class="thread-date">' + (x.answered_at ? '解答日期：' + fmt(x.answered_at) : '等待老師回覆') + '</div></div>' +
       '</article>'
     ).join('') : '<div class="empty-state">目前尚未有學生提出問題。</div>';
