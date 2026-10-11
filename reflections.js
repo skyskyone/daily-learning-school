@@ -33,23 +33,28 @@
   }
 
   function renderQuestions(items){
-    questions.innerHTML = items.length ? items.map(x=>`<article class="question-thread">
-      <div class="question-side"><div class="thread-label">我的問題</div><div class="thread-copy">${esc(x.question_text).replace(/\n/g,'<br>')}</div><div class="thread-date">${fmt(x.created_at)}</div></div>
-      <div class="answer-side"><div class="thread-label">老師解答</div><div class="thread-copy">${x.admin_answer?esc(x.admin_answer).replace(/\n/g,'<br>'):'尚未解答'}</div><div class="thread-date">${x.answered_at?'解答日期：'+fmt(x.answered_at):'等待老師回覆'}</div></div>
-    </article>`).join('') : '<div class="empty-state">目前尚未提出問題。</div>';
+    questions.innerHTML = items.length ? items.map(x =>
+      '<article class="question-thread">' +
+        '<div class="question-side"><div class="thread-label">學生問題</div><div class="thread-copy">' + esc(x.question_text).replace(/\n/g,'<br>') + '</div><div class="thread-date">提出日期：' + fmt(x.created_at) + '</div></div>' +
+        '<div class="answer-side"><div class="thread-label">老師解答</div><div class="thread-copy">' + (x.admin_answer ? esc(x.admin_answer).replace(/\n/g,'<br>') : '尚未解答') + '</div><div class="thread-date">' + (x.answered_at ? '解答日期：' + fmt(x.answered_at) : '等待老師回覆') + '</div></div>' +
+      '</article>'
+    ).join('') : '<div class="empty-state">目前尚未有學生提出問題。</div>';
   }
 
-  function renderData(d){
+  function renderData(d, publicQuestions){
     reflectionData=d;
     renderGoals(d.goals);
-    renderQuestions(d.questions);
+    renderQuestions(publicQuestions);
     loaded=true;
   }
 
   async function loadData(){
     try{
-      const d=await api.get('/student/reflections');
-      renderData(d);
+      const results=await Promise.all([
+        api.get('/student/reflections'),
+        api.get('/student/public-questions')
+      ]);
+      renderData(results[0], results[1].questions || []);
     }catch(err){
       if(err.status===401){api.clearToken();location.href='index.html';return;}
       show(notice,err.message==='找不到 API 路徑。'?'心得區服務尚未完成更新，請稍後再試。':err.message,'error');
