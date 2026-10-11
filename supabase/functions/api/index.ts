@@ -623,21 +623,37 @@ async function route(req: Request) {
 
   if (path === "/student/public-questions" && req.method === "GET") {
     await session(req, "student");
-    const { data: questions, error } = await db.from("student_questions")
-      .select("id,student_id,question_text,admin_answer,created_at,answered_at")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (error) throw error;
 
-    const studentIds = Array.from(new Set((questions || []).map((q:any) => q.student_id)));
-    const { data: students, error: studentsError } = studentIds.length
-      ? await db.from("students").select("id,display_name").in("id", studentIds)
-      : { data: [], error: null };
-    if (studentsError) throw studentsError;
-    const names = new Map((students || []).map((s:any) => [s.id, s.display_name]));
+    // Page through the full question list so older questions do not disappear
+    // after the board grows beyond the usual API response-size limit.
+    const questions:any[] = [];
+    const pageSize = 1000;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await db.from("student_questions")
+        .select("id,student_id,question_text,admin_answer,created_at,answered_at")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      questions.push(...(data || []));
+      if (!data || data.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    const studentIds = Array.from(new Set(questions.map((q:any) => q.student_id)));
+    const names = new Map<string, string>();
+    for (let i = 0; i < studentIds.length; i += 500) {
+      const ids = studentIds.slice(i, i + 500);
+      if (!ids.length) continue;
+      const { data: students, error: studentsError } = await db.from("students")
+        .select("id,display_name")
+        .in("id", ids);
+      if (studentsError) throw studentsError;
+      for (const student of students || []) names.set(student.id, student.display_name);
+    }
 
     return json({
-      questions: (questions || []).map((q:any) => ({
+      questions: questions.map((q:any) => ({
         id: q.id,
         question_text: q.question_text,
         student_name: names.get(q.student_id) || "學生",
