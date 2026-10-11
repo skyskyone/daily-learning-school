@@ -261,3 +261,18 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   .ancestor-seal{right:12px;top:10px;font-size:12px}
   .ancestor-quote{font-size:23px;letter-spacing:.08em}
 }
+
+/* 靈樹介面：隱藏原先成長值區，日月圖示固定在樹景下方左右 */
+.world-tree-page .tree-celestial{position:absolute;z-index:12;bottom:44px;display:flex;align-items:center;justify-content:center;width:52px;height:52px;min-width:0;padding:0;border:1px solid rgba(185,168,137,.55);border-radius:50%;background:rgba(255,250,236,.8);box-shadow:0 3px 12px rgba(62,45,25,.1);pointer-events:none}
+.world-tree-page .tree-sun{left:6%}
+.world-tree-page .tree-moon{right:6%}
+.world-tree-page .celestial-symbol{font-size:34px;line-height:1}
+.world-tree-page .tree-sun .celestial-symbol{color:#bd8b19;text-shadow:0 0 12px rgba(236,190,56,.4)}
+.world-tree-page .tree-moon .celestial-symbol{color:#74758b;text-shadow:0 0 8px rgba(116,117,139,.2)}
+.world-tree-page .tree-ground-label,.world-tree-page .tree-cloud,.world-tree-page .tree-progress-area,.world-tree-page .tree-stats-grid,.world-tree-page .tree-footnote{display:none!important}
+@media(max-width:680px){
+  .world-tree-page .tree-celestial{bottom:34px;width:42px;height:42px}
+  .world-tree-page .celestial-symbol{font-size:29px}
+  .world-tree-page .tree-sun{left:4%}
+  .world-tree-page .tree-moon{right:4%}
+}
