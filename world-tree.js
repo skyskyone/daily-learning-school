@@ -101,25 +101,11 @@
     const isMax=stage===9;
     document.getElementById('tree-stage-name').textContent=data.stage_name||'一方靈土';
     document.getElementById('tree-stage-caption').textContent=STAGE_CAPTIONS[stage-1];
-    document.getElementById('tree-stage-progress').textContent='階段 '+stage+' / 9';
-    document.getElementById('tree-growth-value').textContent='成長值 '+data.growth_value+' / '+data.final_growth_value;
-    document.getElementById('tree-progress-fill').style.width=(Number(data.progress_percent)||0)+'%';
-    document.getElementById('tree-correct-days').textContent=String(data.correct_days||0);
-    document.getElementById('tree-streak').textContent=String(data.current_streak||0);
-    document.getElementById('tree-hanging-count').textContent=String(data.hanging_fruits||0);
-    document.getElementById('tree-fallen-count').textContent=String(data.fallen_fruits||0);
 
     const double=!!data.double_active;
     document.getElementById('tree-sun').classList.toggle('hidden',!double);
     document.getElementById('tree-moon').classList.toggle('hidden',double);
-    const growthNote=document.getElementById('tree-growth-note');
-    if(isMax){
-      growthNote.textContent='世界樹已達第九階，樹身固定不再長高。往後每次結算答對，便會結出金色果實；連續答對加倍時，金果也會加倍。';
-    }else if(double){
-      growthNote.textContent='已連續答對至少兩天！目前啟動加倍成長，下一次結算答對可增加雙倍成長值；一旦答錯或中斷連續答對，便回復正常。';
-    }else{
-      growthNote.textContent='答對每日題目，靈樹便會向前成長；連續兩天答對後啟動加倍。答錯或中斷連續答對會回復正常成長。';
-    }
+
     renderStageImage(stage);
     renderFruits(Number(data.hanging_fruits)||0,Number(data.fallen_fruits)||0,isMax);
   }
