@@ -319,3 +319,50 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   .world-tree-page .celestial-fallback{font-size:32px}
   .tree-fruit-unit{width:15px;height:20px}
 }
+
+/* 提交答案前的最終確認 */
+.confirm-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(33,25,17,.55);backdrop-filter:blur(3px)}
+.confirm-dialog{width:min(460px,100%);padding:34px 28px;text-align:center;box-shadow:0 24px 70px rgba(25,18,12,.3)}
+.confirm-dialog h2{font-size:clamp(24px,5vw,32px);line-height:1.5;margin:8px 0 12px}
+.confirm-seal{width:38px;height:38px;margin:0 auto 12px;display:grid;place-items:center;border:2px solid var(--seal);color:var(--seal);font-size:20px;transform:rotate(4deg)}
+.confirm-copy{line-height:1.9;color:var(--muted);overflow-wrap:anywhere}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+.confirm-actions .primary-btn,.confirm-actions .text-btn{margin:0;width:100%;padding:12px 8px;letter-spacing:.04em}
+.confirm-actions .primary-btn{background:var(--seal);border-color:var(--seal)}
+@media(max-width:480px){.confirm-dialog{padding:28px 18px}.confirm-actions{grid-template-columns:1fr}.confirm-actions .primary-btn{order:0}.confirm-actions .text-btn{order:1}}
+
+/* YouTube 教學影片頁 */
+.lesson-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}
+.lesson-history-panel,.lesson-main-panel{min-width:0;padding:22px}
+.lesson-history-panel h2{font-size:24px;margin-bottom:9px}
+.lesson-history-panel>.muted{font-size:13px;line-height:1.8}
+.lesson-history-list{display:grid;gap:9px;margin-top:16px}
+.lesson-history-item{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;width:100%;min-width:0;padding:12px;border:1px solid rgba(185,168,137,.75);background:#fbf7ea;color:var(--ink)}
+.lesson-history-item.active{border-color:var(--seal);background:#f1e2c9;box-shadow:inset 3px 0 0 var(--seal)}
+.lesson-history-item strong{font-size:15px;line-height:1.6;overflow-wrap:anywhere}
+.lesson-history-item span,.lesson-history-item small{font-size:12px;line-height:1.6;color:var(--muted)}
+.lesson-empty{padding:26px 12px;text-align:center}
+.lesson-empty h2{font-size:clamp(23px,3vw,32px)}
+.lesson-video-heading h2{font-size:clamp(23px,3vw,32px);line-height:1.6;margin-bottom:7px;overflow-wrap:anywhere}
+.lesson-period{font-size:12px;margin-bottom:18px}
+.lesson-player-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#181511;border:1px solid var(--line);box-shadow:0 10px 26px rgba(62,45,25,.1)}
+.lesson-player{position:absolute;inset:0;width:100%;height:100%;border:0}
+.lesson-comments-area{border-top:1px solid rgba(185,168,137,.7);margin-top:28px;padding-top:24px}
+.lesson-comments-area .section-heading{margin-bottom:12px}
+.lesson-comments-area .section-heading h2{margin:0}
+.lesson-comment-form{display:grid;gap:10px;margin:18px 0 24px}
+.lesson-comment-form label{font-size:14px;color:var(--muted)}
+.lesson-comment-form .primary-btn{margin-top:0;max-width:220px}
+.lesson-comments-list{display:grid;gap:12px}
+.lesson-comment-card{border:1px solid var(--line);background:#fbf7ea;padding:15px}
+.lesson-comment-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid rgba(185,168,137,.45);padding-bottom:9px;margin-bottom:10px}
+.lesson-comment-head strong{color:var(--seal);font-size:15px}
+.lesson-comment-head span{font-size:11px;color:var(--muted)}
+.lesson-comment-copy{font-size:16px;line-height:1.9;overflow-wrap:anywhere}
+.lesson-comment-edit{margin-top:10px;padding:7px 10px;font-size:12px;letter-spacing:.04em}
+@media(max-width:760px){
+  .lesson-layout{grid-template-columns:1fr;gap:12px}
+  .lesson-history-panel,.lesson-main-panel{padding:17px}
+  .lesson-history-list{grid-template-columns:1fr}
+  .lesson-comment-form .primary-btn{max-width:none}
+}
