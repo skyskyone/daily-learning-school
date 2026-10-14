@@ -299,7 +299,7 @@ function validLessonInput(body: any) {
   return { value: { title, youtube_url, starts_at: new Date(startMs).toISOString(), ends_at: new Date(endMs).toISOString() } } as const;
 }
 
-async function lessonComments(lessonId: string) {
+async function lessonComments(lessonId: string, currentStudentId?: string | null) {
   const { data: comments, error } = await db.from("lesson_comments")
     .select("id,lesson_id,student_id,content,created_at,updated_at")
     .eq("lesson_id", lessonId)
@@ -320,6 +320,7 @@ async function lessonComments(lessonId: string) {
     lesson_id: x.lesson_id,
     student_id: x.student_id,
     student_name: nameMap.get(x.student_id) || "學生",
+    is_mine: !!currentStudentId && x.student_id === currentStudentId,
     content: x.content,
     created_at: x.created_at,
     updated_at: x.updated_at
@@ -728,7 +729,7 @@ async function route(req: Request) {
   }
 
   if (path === "/student/lessons" && req.method === "GET") {
-    await session(req, "student");
+    const s = await session(req, "student");
     const now = Date.now();
     const { data: lessons, error } = await db.from("teaching_lessons")
       .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
@@ -738,7 +739,7 @@ async function route(req: Request) {
     const all = lessons || [];
     const current = all.find((x:any) => Date.parse(x.starts_at) <= now && Date.parse(x.ends_at) > now) || null;
     const archived = all.filter((x:any) => Date.parse(x.ends_at) <= now);
-    const comments = current ? await lessonComments(current.id) : [];
+    const comments = current ? await lessonComments(current.id, s.student_id) : [];
     return json({ current_lesson: current, archived_lessons: archived, comments });
   }
 
@@ -768,7 +769,7 @@ async function route(req: Request) {
 
   const studentLessonDetail = path.match(/^\/student\/lessons\/([0-9a-f-]+)$/i);
   if (studentLessonDetail && req.method === "GET") {
-    await session(req, "student");
+    const s = await session(req, "student");
     const lessonId = studentLessonDetail[1];
     const { data: lesson, error } = await db.from("teaching_lessons")
       .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
@@ -776,7 +777,7 @@ async function route(req: Request) {
     if (error) throw error;
     if (!lesson) return bad("找不到這段教學影片。", 404);
     if (Date.parse(lesson.starts_at) > Date.now()) return bad("這段教學影片尚未開放。", 403);
-    return json({ lesson, comments: await lessonComments(lessonId), can_comment: Date.parse(lesson.ends_at) > Date.now() });
+    return json({ lesson, comments: await lessonComments(lessonId, s.student_id), can_comment: Date.parse(lesson.ends_at) > Date.now() });
   }
 
   const studentLessonCommentUpdate = path.match(/^\/student\/lesson-comments\/([0-9a-f-]+)$/i);
