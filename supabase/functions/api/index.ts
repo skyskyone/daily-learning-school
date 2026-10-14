@@ -263,6 +263,69 @@ async function getStudentReflections(studentId: string) {
   };
 }
 
+
+function youtubeVideoId(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    if (host === "youtu.be") {
+      const id = u.pathname.split("/").filter(Boolean)[0] || "";
+      return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+    }
+    if (host !== "youtube.com" && host !== "m.youtube.com" && host !== "youtube-nocookie.com") return null;
+    let id = u.searchParams.get("v") || "";
+    if (!id) {
+      const match = u.pathname.match(/^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
+      id = match?.[1] || "";
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+function validLessonInput(body: any) {
+  const title = text(body.title, 200);
+  const youtube_url = text(body.youtube_url, 1000);
+  const starts_at = String(body.starts_at || "");
+  const ends_at = String(body.ends_at || "");
+  const startMs = Date.parse(starts_at);
+  const endMs = Date.parse(ends_at);
+  if (!title) return { error: "請填寫教學影片標題。" } as const;
+  if (!youtubeVideoId(youtube_url)) return { error: "請輸入有效的 YouTube 影片網址。" } as const;
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+    return { error: "影片開始及結束時間不正確；結束時間必須晚於開始時間。" } as const;
+  }
+  return { value: { title, youtube_url, starts_at: new Date(startMs).toISOString(), ends_at: new Date(endMs).toISOString() } } as const;
+}
+
+async function lessonComments(lessonId: string) {
+  const { data: comments, error } = await db.from("lesson_comments")
+    .select("id,lesson_id,student_id,content,created_at,updated_at")
+    .eq("lesson_id", lessonId)
+    .order("created_at", { ascending: true })
+    .limit(2000);
+  if (error) throw error;
+  const studentIds = Array.from(new Set((comments || []).map((x:any) => x.student_id)));
+  const nameMap = new Map<string,string>();
+  for (let i = 0; i < studentIds.length; i += 500) {
+    const ids = studentIds.slice(i, i + 500);
+    if (!ids.length) continue;
+    const { data: students, error: se } = await db.from("students").select("id,display_name").in("id", ids);
+    if (se) throw se;
+    for (const s of students || []) nameMap.set(s.id, s.display_name);
+  }
+  return (comments || []).map((x:any) => ({
+    id: x.id,
+    lesson_id: x.lesson_id,
+    student_id: x.student_id,
+    student_name: nameMap.get(x.student_id) || "學生",
+    content: x.content,
+    created_at: x.created_at,
+    updated_at: x.updated_at
+  }));
+}
+
 async function route(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const url = new URL(req.url);
@@ -664,6 +727,76 @@ async function route(req: Request) {
     });
   }
 
+  if (path === "/student/lessons" && req.method === "GET") {
+    await session(req, "student");
+    const now = Date.now();
+    const { data: lessons, error } = await db.from("teaching_lessons")
+      .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
+      .order("starts_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    const all = lessons || [];
+    const current = all.find((x:any) => Date.parse(x.starts_at) <= now && Date.parse(x.ends_at) > now) || null;
+    const archived = all.filter((x:any) => Date.parse(x.ends_at) <= now);
+    const comments = current ? await lessonComments(current.id) : [];
+    return json({ current_lesson: current, archived_lessons: archived, comments });
+  }
+
+  const studentLessonCommentPost = path.match(/^\/student\/lessons\/([0-9a-f-]+)\/comments$/i);
+  if (studentLessonCommentPost && req.method === "POST") {
+    const s = await session(req, "student");
+    const lessonId = studentLessonCommentPost[1];
+    const content = text(body.content, 4000);
+    if (!content) return bad("請輸入留言內容。", 422);
+    const { data: lesson, error: le } = await db.from("teaching_lessons")
+      .select("id,starts_at,ends_at")
+      .eq("id", lessonId).maybeSingle();
+    if (le) throw le;
+    if (!lesson) return bad("找不到這段教學影片。", 404);
+    const now = Date.now();
+    if (Date.parse(lesson.starts_at) > now || Date.parse(lesson.ends_at) <= now) {
+      return bad("只有影片開放期間才能新增留言。", 403);
+    }
+    const { error } = await db.from("lesson_comments").insert({
+      lesson_id: lessonId,
+      student_id: s.student_id,
+      content
+    });
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
+  const studentLessonDetail = path.match(/^\/student\/lessons\/([0-9a-f-]+)$/i);
+  if (studentLessonDetail && req.method === "GET") {
+    await session(req, "student");
+    const lessonId = studentLessonDetail[1];
+    const { data: lesson, error } = await db.from("teaching_lessons")
+      .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
+      .eq("id", lessonId).maybeSingle();
+    if (error) throw error;
+    if (!lesson) return bad("找不到這段教學影片。", 404);
+    if (Date.parse(lesson.starts_at) > Date.now()) return bad("這段教學影片尚未開放。", 403);
+    return json({ lesson, comments: await lessonComments(lessonId), can_comment: Date.parse(lesson.ends_at) > Date.now() });
+  }
+
+  const studentLessonCommentUpdate = path.match(/^\/student\/lesson-comments\/([0-9a-f-]+)$/i);
+  if (studentLessonCommentUpdate && req.method === "PUT") {
+    const s = await session(req, "student");
+    const commentId = studentLessonCommentUpdate[1];
+    const content = text(body.content, 4000);
+    if (!content) return bad("留言不能留白。", 422);
+    const { data: comment, error: ce } = await db.from("lesson_comments")
+      .select("id,student_id").eq("id", commentId).maybeSingle();
+    if (ce) throw ce;
+    if (!comment) return bad("找不到這則留言。", 404);
+    if (comment.student_id !== s.student_id) return bad("只能修改自己的留言。", 403);
+    const { error } = await db.from("lesson_comments")
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq("id", commentId).eq("student_id", s.student_id);
+    if (error) throw error;
+    return json({ ok: true });
+  }
+
   if (path === "/student/questions" && req.method === "POST") {
     const s = await session(req, "student");
     const questionText = text(body.question_text, 3000);
@@ -710,6 +843,42 @@ async function route(req: Request) {
     if(body.pin!==undefined){const pin=text(body.pin,4);if(!/^\d{4}$/.test(pin))return bad("PIN 必須是 4 位數字。",422);patch.pin_hash=await hashPin(pin);}
     if(!Object.keys(patch).length)return bad("沒有可更新內容。",422);
     const {error}=await db.from("students").update(patch).eq("id",id);if(error)throw error; return json({ok:true});
+  }
+
+  if (path === "/admin/lessons" && req.method === "GET") {
+    await session(req, "admin");
+    const { data, error } = await db.from("teaching_lessons")
+      .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
+      .order("starts_at", { ascending: false }).limit(500);
+    if (error) throw error;
+    return json({ lessons: data || [] });
+  }
+
+  if (path === "/admin/lessons" && req.method === "POST") {
+    await session(req, "admin");
+    const checked = validLessonInput(body);
+    if ("error" in checked) return bad(checked.error, 422);
+    const { data, error } = await db.from("teaching_lessons")
+      .insert(checked.value)
+      .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
+      .single();
+    if (error) throw error;
+    return json({ ok: true, lesson: data });
+  }
+
+  const adminLessonMatch = path.match(/^\/admin\/lessons\/([0-9a-f-]+)$/i);
+  if (adminLessonMatch && req.method === "PUT") {
+    await session(req, "admin");
+    const checked = validLessonInput(body);
+    if ("error" in checked) return bad(checked.error, 422);
+    const { data, error } = await db.from("teaching_lessons")
+      .update({ ...checked.value, updated_at: new Date().toISOString() })
+      .eq("id", adminLessonMatch[1])
+      .select("id,title,youtube_url,starts_at,ends_at,created_at,updated_at")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return bad("找不到這段教學影片。", 404);
+    return json({ ok: true, lesson: data });
   }
 
   if (path === "/admin/questions" && req.method === "GET") {
