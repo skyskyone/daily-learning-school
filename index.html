@@ -33,6 +33,7 @@
         <div class="header-actions">
           <a href="reflections.html">心得區</a>
           <a href="world-tree.html">靈樹</a>
+          <a href="lessons.html">教學影片</a>
           <button id="student-logout" class="text-btn">離開學堂</button>
         </div>
       </header>
@@ -41,11 +42,23 @@
 
       <section class="question-card">
         <div class="question-ribbon">今日題目</div>
-        <div class="question-meta"><span id="question-date" class="question-date"></span><span id="question-state" class="question-state">載入中…</span></div>
         <h2 id="question-text" class="question-text">—</h2>
         <div id="options" class="options-grid"></div>
         <div id="answer-message" class="answer-message hidden"></div>
       </section>
+
+      <div id="answer-confirm-modal" class="confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="answer-confirm-title">
+        <div class="confirm-dialog panel">
+          <div class="confirm-seal">定</div>
+          <p class="eyebrow">請再確認一次</p>
+          <h2 id="answer-confirm-title">這是你的最終決定嗎？</h2>
+          <p id="answer-confirm-copy" class="confirm-copy"></p>
+          <div class="confirm-actions">
+            <button id="answer-confirm-yes" type="button" class="primary-btn">是，確定提交</button>
+            <button id="answer-confirm-back" type="button" class="text-btn">返回重新選擇</button>
+          </div>
+        </div>
+      </div>
 
       <section class="quick-links">
         <a class="link-card" href="leaderboard.html">
