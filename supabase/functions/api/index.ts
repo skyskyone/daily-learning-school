@@ -318,7 +318,6 @@ async function lessonComments(lessonId: string, currentStudentId?: string | null
   return (comments || []).map((x:any) => ({
     id: x.id,
     lesson_id: x.lesson_id,
-    student_id: x.student_id,
     student_name: nameMap.get(x.student_id) || "學生",
     is_mine: !!currentStudentId && x.student_id === currentStudentId,
     content: x.content,
