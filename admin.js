@@ -4,7 +4,7 @@
   const loginError=document.getElementById('admin-login-error');
   const notice=document.getElementById('admin-notice');
   const tabs=[...document.querySelectorAll('.tab')];
-  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections')};
+  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections'),lessons:document.getElementById('tab-lessons')};
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Taipei'});
   function show(el,msg,type){ el.textContent=msg||''; el.className='notice '+(type||'')+(msg?'':' hidden'); }
@@ -21,7 +21,7 @@
   async function tryExisting(){ if(api.tokenRole()!=='admin')return; try{await api.get('/admin/me');await openAdmin();}catch(_){api.clearToken();} }
   async function openAdmin(){
     loginView.classList.add('hidden'); adminView.classList.remove('hidden');
-    await Promise.all([loadStudents(),loadQuestions(),loadSettings(),loadReflectionStudents()]);
+    await Promise.all([loadStudents(),loadQuestions(),loadSettings(),loadReflectionStudents(),loadLessons()]);
     const d=new Date(); document.getElementById('results-date').value=d.toLocaleDateString('en-CA',{timeZone:'UTC'});
   }
 
@@ -102,6 +102,81 @@
     catch(err){show(notice,err.message,'error');}
   }
 
+  function datetimeLocalValue(iso){
+    if(!iso)return '';
+    const d=new Date(iso);
+    if(Number.isNaN(d.getTime()))return '';
+    const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  }
+
+  function lessonStatus(lesson){
+    const now=Date.now();
+    if(Date.parse(lesson.ends_at)<=now)return '已結束（歷史紀錄）';
+    if(Date.parse(lesson.starts_at)>now)return '尚未開始';
+    return '開放中';
+  }
+
+  async function loadLessons(){
+    try{
+      const d=await api.get('/admin/lessons');
+      const lessons=d.lessons||[];
+      const el=document.getElementById('lessons-admin-table');
+      if(!lessons.length){
+        el.innerHTML='<div class="empty-state">尚未建立教學影片。</div>';
+        return;
+      }
+      el.innerHTML='<table><thead><tr><th>標題</th><th>開放期間</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
+        lessons.map(x=>'<tr>'+
+          '<td><strong>'+esc(x.title)+'</strong><br><a href="'+esc(x.youtube_url)+'" target="_blank" rel="noopener">查看 YouTube 原始網址</a></td>'+
+          '<td>'+esc(new Date(x.starts_at).toLocaleString('zh-Hant'))+'<br>至<br>'+esc(new Date(x.ends_at).toLocaleString('zh-Hant'))+'</td>'+
+          '<td>'+esc(lessonStatus(x))+'</td>'+
+          '<td><button type="button" class="secondary-btn lesson-edit" data-id="'+esc(x.id)+'" data-title="'+esc(encodeURIComponent(x.title))+'" data-url="'+esc(encodeURIComponent(x.youtube_url))+'" data-start="'+esc(x.starts_at)+'" data-end="'+esc(x.ends_at)+'">編輯</button></td>'+
+        '</tr>').join('')+'</tbody></table>';
+      el.querySelectorAll('.lesson-edit').forEach(b=>b.addEventListener('click',()=>editLesson(b)));
+    }catch(err){show(notice,err.message||'無法載入教學影片。','error');}
+  }
+
+  function editLesson(button){
+    document.getElementById('lesson-id').value=button.dataset.id;
+    document.getElementById('lesson-title').value=decodeURIComponent(button.dataset.title||'');
+    document.getElementById('lesson-youtube-url').value=decodeURIComponent(button.dataset.url||'');
+    document.getElementById('lesson-starts-at').value=datetimeLocalValue(button.dataset.start);
+    document.getElementById('lesson-ends-at').value=datetimeLocalValue(button.dataset.end);
+    document.getElementById('lesson-save').textContent='儲存修改';
+    document.getElementById('lesson-form').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function clearLessonForm(){
+    document.getElementById('lesson-form').reset();
+    document.getElementById('lesson-id').value='';
+    document.getElementById('lesson-save').textContent='新增教學影片';
+  }
+
+  async function saveLesson(e){
+    e.preventDefault();
+    const id=document.getElementById('lesson-id').value;
+    const starts=document.getElementById('lesson-starts-at').value;
+    const ends=document.getElementById('lesson-ends-at').value;
+    if(!starts||!ends||new Date(ends)<=new Date(starts)){
+      show(notice,'結束時間必須晚於開始時間。','error');
+      return;
+    }
+    const payload={
+      title:document.getElementById('lesson-title').value.trim(),
+      youtube_url:document.getElementById('lesson-youtube-url').value.trim(),
+      starts_at:new Date(starts).toISOString(),
+      ends_at:new Date(ends).toISOString()
+    };
+    try{
+      if(id) await api.put('/admin/lessons/'+encodeURIComponent(id),payload);
+      else await api.post('/admin/lessons',payload);
+      show(notice,id?'教學影片已更新。':'教學影片已新增。','success');
+      clearLessonForm();
+      await loadLessons();
+    }catch(err){show(notice,err.message||'無法儲存教學影片。','error');}
+  }
+
   async function saveSettings(e){e.preventDefault(); const payload={publish_time:document.getElementById('publish-time').value,close_time:document.getElementById('close-time').value,timezone:document.getElementById('timezone').value.trim()}; try{await api.put('/admin/settings',payload);show(notice,'時間設定已更新。','success');}catch(err){show(notice,err.message,'error');}}
 
   async function loadResults(){
@@ -118,6 +193,8 @@
   document.getElementById('question-form').addEventListener('submit',saveQuestion);
   document.getElementById('settings-form').addEventListener('submit',saveSettings);
   document.getElementById('load-results').addEventListener('click',loadResults);
+  document.getElementById('lesson-form').addEventListener('submit',saveLesson);
+  document.getElementById('lesson-clear').addEventListener('click',clearLessonForm);
   document.getElementById('reflection-student-select').addEventListener('change',e=>loadAdminReflections(e.target.value));
   tabs.forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.tab)));
   document.getElementById('new-student-pin').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,4));
