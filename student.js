@@ -7,8 +7,10 @@
   const loginError = document.getElementById('login-error');
   const greeting = document.getElementById('student-greeting');
   const notice = document.getElementById('student-notice');
-  const dateEl = document.getElementById('question-date');
-  const stateEl = document.getElementById('question-state');
+  const confirmModal = document.getElementById('answer-confirm-modal');
+  const confirmCopy = document.getElementById('answer-confirm-copy');
+  const confirmYes = document.getElementById('answer-confirm-yes');
+  let pendingChoice = null;
   const textEl = document.getElementById('question-text');
   const optionsEl = document.getElementById('options');
   const answerMessage = document.getElementById('answer-message');
@@ -58,27 +60,22 @@
 
   function renderQuestion(data){
     todayData = data;
-    const hasDate = !!data.question_date;
-    dateEl.textContent = hasDate ? formatDate(data.question_date) : '';
-    dateEl.classList.toggle('hidden', !hasDate);
     answerMessage.classList.add('hidden');
     optionsEl.innerHTML='';
     if (data.state === 'no_question'){
-      stateEl.textContent='今日尚未安排題目'; textEl.textContent='敬候出題'; return;
+      textEl.textContent='今日尚未安排題目，敬候出題。'; return;
     }
     if (data.state === 'not_open'){
-      stateEl.textContent = `今日題將於 ${data.publish_time} 開放`;
       textEl.textContent='請稍候片刻，準時入堂。';
       return;
     }
-    stateEl.textContent = data.state === 'settled' ? '今日已結算' : '作答時間';
     textEl.textContent = data.question_text;
     [1,2].forEach(n=>{
       const b = document.createElement('button');
       b.className='option-btn' + (data.choice === n ? ' selected' : '');
       b.disabled = data.state !== 'open' || data.answered;
       b.innerHTML = `<span class="option-no">${n===1?'一':'二'}</span><span class="option-copy">${escapeHtml(n===1?data.option1:data.option2)}</span>`;
-      b.addEventListener('click',()=>submit(n));
+      b.addEventListener('click',()=>confirmAnswer(n));
       optionsEl.appendChild(b);
     });
     if (data.state === 'settled'){
@@ -92,14 +89,23 @@
     }
   }
 
-  function formatDate(value){
-    const m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(value || ''));
-    return m ? `${m[1]}年${m[2]}月${m[3]}日` : '';
-  }
-
   async function loadToday(){
     try{ renderQuestion(await api.get('/student/today')); }
     catch(err){ if(err.status===401){ api.clearToken(); location.reload(); } else show(notice,err.message,'error'); }
+  }
+
+  function confirmAnswer(choice){
+    if (!todayData || todayData.state !== 'open' || todayData.answered) return;
+    pendingChoice = choice;
+    const optionText = choice === 1 ? todayData.option1 : todayData.option2;
+    confirmCopy.textContent = '你選擇了「答案'+(choice===1?'一':'二')+'：'+optionText+'」。提交後不能更改，請確認這是你的最終決定。';
+    confirmModal.classList.remove('hidden');
+    confirmYes.focus();
+  }
+
+  function closeConfirm(){
+    confirmModal.classList.add('hidden');
+    pendingChoice = null;
   }
 
   async function submit(choice){
@@ -110,6 +116,14 @@
   }
 
   logoutBtn.addEventListener('click',()=>{ api.clearToken(); location.reload(); });
+  confirmYes.addEventListener('click',async()=>{
+    const choice=pendingChoice;
+    closeConfirm();
+    if(choice) await submit(choice);
+  });
+  document.getElementById('answer-confirm-back').addEventListener('click',closeConfirm);
+  confirmModal.addEventListener('click',e=>{if(e.target===confirmModal)closeConfirm();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!confirmModal.classList.contains('hidden'))closeConfirm();});
   loginBtn.addEventListener('click',login);
   pinInput.addEventListener('input',()=>{ pinInput.value=pinInput.value.replace(/\D/g,'').slice(0,4); });
   pinInput.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
