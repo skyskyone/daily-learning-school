@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>教學影片｜每日學堂</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="paper-bg lesson-page">
+  <main class="page-shell compact-shell">
+    <header class="student-header">
+      <div>
+        <p class="eyebrow">每日學堂</p>
+        <h1>教學影片</h1>
+      </div>
+      <div class="header-actions">
+        <a href="index.html">返回今日題目</a>
+        <a href="reflections.html">心得區</a>
+        <a href="world-tree.html">靈樹</a>
+        <button id="lesson-logout" class="text-btn">離開學堂</button>
+      </div>
+    </header>
+
+    <div id="lesson-auth" class="notice hidden"></div>
+    <div id="lesson-notice" class="notice hidden"></div>
+
+    <div class="lesson-layout">
+      <aside class="panel lesson-history-panel">
+        <h2>歷史紀錄</h2>
+        <p class="muted">教學期間結束的影片會自動收錄在這裡，可隨時重新查看。</p>
+        <nav id="lesson-history-list" class="lesson-history-list">
+          <div class="muted">載入中…</div>
+        </nav>
+      </aside>
+
+      <section class="panel lesson-main-panel">
+        <div id="lesson-current-view">
+          <div class="lesson-empty">
+            <h2 id="lesson-current-title">目前沒有開放中的教學影片</h2>
+            <p id="lesson-current-description" class="muted">老師設定開放期間後，影片會在這裡出現。</p>
+          </div>
+        </div>
+
+        <section id="lesson-comments-area" class="lesson-comments-area hidden">
+          <div class="section-heading">
+            <div><p class="eyebrow">課堂討論</p><h2>疑問區</h2></div>
+          </div>
+          <p id="lesson-comment-guidance" class="muted">歡迎提出與本段教學有關的疑問；所有登入學生都能查看。</p>
+          <form id="lesson-comment-form" class="lesson-comment-form">
+            <label for="lesson-comment-input">你的疑問或留言</label>
+            <textarea id="lesson-comment-input" class="field" rows="4" maxlength="4000" placeholder="寫下你的問題或課堂心得…" required></textarea>
+            <button class="primary-btn" type="submit">送出留言</button>
+          </form>
+          <div id="lesson-comments-list" class="lesson-comments-list"></div>
+        </section>
+      </section>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="lessons.js"></script>
+</body>
+</html>
