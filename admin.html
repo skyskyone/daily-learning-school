@@ -38,6 +38,7 @@
         <button data-tab="results" class="tab">每日結算</button>
         <button data-tab="settings" class="tab">時間設定</button>
         <button data-tab="reflections" class="tab">心得管理</button>
+        <button data-tab="lessons" class="tab">教學影片</button>
       </nav>
 
       <section id="tab-students" class="admin-section">
@@ -98,6 +99,23 @@
             <div id="admin-questions-list" class="admin-questions-list"></div>
           </section>
         </div>
+      </section>
+
+      <section id="tab-lessons" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">YouTube 教學</p><h2>教學影片管理</h2></div></div>
+        <p class="muted">設定影片標題、YouTube 網址及開放起訖時間。到達結束時間後，影片會自動移入學生頁面左側的歷史紀錄；不會顯示倒數時間。</p>
+        <form id="lesson-form" class="form-grid two-col lesson-admin-form">
+          <input id="lesson-id" type="hidden">
+          <label class="full">教學標題<input id="lesson-title" class="field" maxlength="200" required placeholder="例如：第二堂｜靜坐入門"></label>
+          <label class="full">YouTube 影片網址<input id="lesson-youtube-url" type="url" class="field" maxlength="1000" required placeholder="https://www.youtube.com/watch?v=..."></label>
+          <label>開始時間<input id="lesson-starts-at" type="datetime-local" class="field" required></label>
+          <label>結束時間<input id="lesson-ends-at" type="datetime-local" class="field" required></label>
+          <div class="lesson-form-actions full">
+            <button id="lesson-save" class="primary-btn" type="submit">新增教學影片</button>
+            <button id="lesson-clear" class="secondary-btn" type="button">清除欄位</button>
+          </div>
+        </form>
+        <div id="lessons-admin-table" class="table-wrap"></div>
       </section>
 
       <section id="tab-settings" class="admin-section hidden">
