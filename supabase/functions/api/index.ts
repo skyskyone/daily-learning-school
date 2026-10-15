@@ -1006,7 +1006,15 @@ Deno.serve(async (req) => {
   try { return await route(req); }
   catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") return json({error:"登入已失效，請重新登入。"},401);
+    const dbErr = err as { code?: string; message?: string };
+    const detail = String(dbErr?.message || "");
+    if (dbErr?.code === "42P01" || dbErr?.code === "PGRST205" || /relation .*?(teaching_lessons|lesson_comments).*?does not exist/i.test(detail)) {
+      return json({error:"教學影片資料表尚未建立或尚未同步。請在 Supabase SQL Editor 執行 20261014000000_youtube_lessons.sql，完成後再試。"},503);
+    }
+    if (dbErr?.code === "42501") {
+      return json({error:"教學留言資料表權限不足。請確認已部署最新 api，並確認 Edge Function 使用 SUPABASE_SERVICE_ROLE_KEY。"},503);
+    }
     console.error(err);
-    return json({error:"伺服器暫時無法處理要求。"},500);
+    return json({error:"伺服器暫時無法處理要求。請重新登入後再試；若仍然失敗，請查看 Supabase Edge Functions 的 api Logs。"},500);
   }
 });
