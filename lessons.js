@@ -76,7 +76,7 @@
     guidance.textContent=canComment
       ?'看完影片後在這留下你的問題，聚會時大家一起討論。'
       :'這段教學已結束，留言仍可查閱；你仍可以修改自己曾留下的留言。';
-    commentForm.classList.toggle('hidden',canComment);
+    commentForm.classList.toggle('hidden',!canComment);
     commentsList.innerHTML=items.length?items.map(x=>
       '<article class="lesson-comment-card">'+
         '<div class="lesson-comment-head"><strong>'+esc(x.student_name||'學生')+'</strong><span>'+esc(fmt(x.created_at))+(x.updated_at&&x.updated_at!==x.created_at?' · 已修改':'')+'</span></div>'+
