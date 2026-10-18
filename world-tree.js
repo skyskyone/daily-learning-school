@@ -83,24 +83,28 @@
   }
 
   function renderStageImage(stage){
+    const scene=document.getElementById('world-tree-scene');
     fallback.dataset.stage=String(stage);
     fallback.classList.remove('hidden');
     image.classList.add('hidden');
-    image.onload=()=>{
-      if(image.naturalWidth>0){
+    // Default canvas ratio is 16:9; once an uploaded image loads, the scene
+    // adopts that image's intrinsic ratio so no old frame/gutters protrude.
+    scene.style.aspectRatio='16 / 9';
+    const fitToImage=()=>{
+      if(image.naturalWidth>0 && image.naturalHeight>0){
+        scene.style.aspectRatio=image.naturalWidth+' / '+image.naturalHeight;
         image.classList.remove('hidden');
         fallback.classList.add('hidden');
       }
     };
+    image.onload=fitToImage;
     image.onerror=()=>{
+      scene.style.aspectRatio='16 / 9';
       image.classList.add('hidden');
       fallback.classList.remove('hidden');
     };
     image.src=STAGE_IMAGES[stage-1] || STAGE_IMAGES[0];
-    if(image.complete && image.naturalWidth>0){
-      image.classList.remove('hidden');
-      fallback.classList.add('hidden');
-    }
+    if(image.complete && image.naturalWidth>0) fitToImage();
   }
 
   function attachFruitImageFallbacks(root){
