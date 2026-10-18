@@ -462,12 +462,3 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   background:transparent !important;
 }
 
-/* 八階靈樹：第七階為蒼樹成蔭，第八階直接使用最終世界樹造型 */
-.tree-art-fallback[data-stage="7"]{--trunk-height:140px;--branch-height:70px;--canopy-width:275px;--canopy-height:185px;--trunk-width:18px}
-.tree-art-fallback[data-stage="8"]{--trunk-height:165px;--branch-height:82px;--canopy-width:320px;--canopy-height:210px;--trunk-width:21px}
-.tree-art-fallback[data-stage="7"] .tree-leaf:nth-child(-n+9),
-.tree-art-fallback[data-stage="8"] .tree-leaf{display:block}
-@media(max-width:680px){
-  .tree-art-fallback[data-stage="7"]{--trunk-height:98px;--branch-height:50px;--canopy-width:206px;--canopy-height:140px;--trunk-width:14px}
-  .tree-art-fallback[data-stage="8"]{--trunk-height:115px;--branch-height:58px;--canopy-width:240px;--canopy-height:155px;--trunk-width:16px}
-}
