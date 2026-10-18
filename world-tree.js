@@ -19,8 +19,6 @@
     }
   });
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  // 八階顯示沿用現有素材：第七階使用 mature-tree，第八階使用 world-tree。
-  // 舊的 stage-07-growing-tree.png 保留在資料夾中，不再作為獨立階段使用。
   const STAGE_IMAGES=[
     'assets/world-tree/stage-01-land.png',
     'assets/world-tree/stage-02-seed.png',
@@ -28,6 +26,7 @@
     'assets/world-tree/stage-04-two-leaves.png',
     'assets/world-tree/stage-05-seedling.png',
     'assets/world-tree/stage-06-young-tree.png',
+    'assets/world-tree/stage-07-growing-tree.png',
     'assets/world-tree/stage-08-mature-tree.png',
     'assets/world-tree/stage-09-world-tree.png'
   ];
@@ -38,7 +37,8 @@
     '雙葉初展，幼苗開始穩穩扎根。',
     '幼苗初立，日積月累向上生長。',
     '小樹成形，根深枝展。',
-    '蒼樹成蔭，根深葉茂，靜待圓滿。',
+    '青木舒枝，逐漸伸展成蔭。',
+    '蒼樹成蔭，離最後只差最後一步。',
     '世界初成，靈樹巍然佇立。'
   ];
   // 節錄自《皇明祖訓·序》，每次進入靈樹隨機顯示一條。
@@ -125,7 +125,7 @@
     hanging.innerHTML='';
     groundFruits.innerHTML='';
 
-    // Each successful answer after reaching stage eight becomes one fruit.
+    // Each successful answer after reaching stage nine becomes one fruit.
     // Fruit images are positioned individually, so the tree can accumulate them.
     if(isMaxStage && hangingCount>0){
       const visible=Math.min(hangingCount,HANG_POSITIONS.length);
@@ -159,8 +159,8 @@
   }
 
   function render(data){
-    const stage=Math.max(1,Math.min(8,Number(data.stage)||1));
-    const isMax=stage===8;
+    const stage=Math.max(1,Math.min(9,Number(data.stage)||1));
+    const isMax=stage===9;
     document.getElementById('tree-stage-name').textContent=data.stage_name||'一方靈土';
     document.getElementById('tree-stage-caption').textContent=STAGE_CAPTIONS[stage-1];
 
