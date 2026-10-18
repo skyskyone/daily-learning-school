@@ -444,3 +444,20 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   .world-tree-page .tree-sun{left:2.5%}
   .world-tree-page .tree-moon{right:2.5%}
 }
+
+
+/* 太陽／月亮素材的白底融入世界樹背景；真正透明 PNG 也同樣適用 */
+.world-tree-page .tree-celestial{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  overflow:visible;
+}
+.world-tree-page .tree-celestial .celestial-image{
+  background:transparent !important;
+  mix-blend-mode:multiply;
+  filter:none;
+}
+.world-tree-page .tree-celestial .celestial-fallback{
+  background:transparent !important;
+}
