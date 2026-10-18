@@ -430,11 +430,11 @@ async function route(req: Request) {
     if (se) throw se;
     const submitted = new Map((submissions || []).map((x:any) => [x.question_id, x.choice]));
 
-    // 八階慢速養成：沿用長期養成節奏，連續答對第二天起每日 +2 點；第八階為世界樹。
-    const thresholds = [0, 14, 60, 180, 365, 730, 1460, 3650];
+    // 慢速養成：連續答對時第 2 天起每日 +2 點；不間斷作答約 5 年抵達第九階。
+    const thresholds = [0, 14, 60, 180, 365, 730, 1460, 2555, 3650];
     const stageNames = [
-      "一方靈土", "靈種入土", "破土萌芽", "初展雙葉",
-      "幼苗初立", "小樹成形", "蒼樹成蔭", "世界樹"
+      "一方靈土", "靈種入土", "破土萌芽", "初展雙葉", "幼苗初立",
+      "小樹成形", "青木舒枝", "蒼樹成蔭", "世界樹"
     ];
     let growth = 0;
     let stage = 1;
@@ -459,8 +459,8 @@ async function route(req: Request) {
       correctDays += 1;
       const gain = streak >= 2 ? 2 : 1;
 
-      if (stage < 8) {
-        growth = Math.min(thresholds[7], growth + gain);
+      if (stage < 9) {
+        growth = Math.min(thresholds[8], growth + gain);
         for (let i = thresholds.length - 1; i >= 0; i--) {
           if (growth >= thresholds[i]) {
             stage = i + 1;
@@ -483,8 +483,8 @@ async function route(req: Request) {
     }
 
     const previousThreshold = thresholds[Math.max(0, stage - 1)];
-    const nextThreshold = stage >= 8 ? thresholds[7] : thresholds[stage];
-    const progressPercent = stage >= 8
+    const nextThreshold = stage >= 9 ? thresholds[8] : thresholds[stage];
+    const progressPercent = stage >= 9
       ? 100
       : Math.max(0, Math.min(100, Math.round(((growth - previousThreshold) / Math.max(1, nextThreshold - previousThreshold)) * 100)));
 
@@ -493,12 +493,12 @@ async function route(req: Request) {
       stage,
       stage_name: stageNames[stage - 1],
       growth_value: growth,
-      final_growth_value: thresholds[7],
+      final_growth_value: thresholds[8],
       progress_percent: progressPercent,
       correct_days: correctDays,
       current_streak: streak,
       double_active: streak >= 2,
-      max_stage: stage >= 8,
+      max_stage: stage >= 9,
       hanging_fruits: hangingFruits,
       fallen_fruits: fallenFruits,
       settled_days: settledQuestions.length
