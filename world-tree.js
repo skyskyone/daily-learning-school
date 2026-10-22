@@ -1,47 +1,9 @@
 (function(){
-  const auth=document.getElementById('tree-auth');
-  const notice=document.getElementById('tree-notice');
-  const image=document.getElementById('tree-stage-image');
-  const fallback=document.getElementById('tree-art-fallback');
-  const hanging=document.getElementById('tree-hanging-fruits');
-  const groundFruits=document.getElementById('tree-ground-fruits');
-
-  // Use uploaded sun/moon PNGs when present; otherwise retain the built-in glyph.
-  document.querySelectorAll('.tree-celestial img.celestial-image').forEach(img=>{
-    const parent=img.parentElement;
-    const ready=()=>parent.classList.add('image-ready');
-    const failed=()=>parent.classList.remove('image-ready');
-    img.addEventListener('load',ready,{once:true});
-    img.addEventListener('error',failed,{once:true});
-    if(img.complete){
-      if(img.naturalWidth>0) ready();
-      else failed();
-    }
-  });
-  const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  const STAGE_IMAGES=[
-    'assets/world-tree/stage-01-land.png',
-    'assets/world-tree/stage-02-seed.png',
-    'assets/world-tree/stage-03-sprout.png',
-    'assets/world-tree/stage-04-two-leaves.png',
-    'assets/world-tree/stage-05-seedling.png',
-    'assets/world-tree/stage-06-young-tree.png',
-    'assets/world-tree/stage-07-growing-tree.png',
-    'assets/world-tree/stage-08-mature-tree.png',
-    'assets/world-tree/stage-09-world-tree.png'
-  ];
-  const STAGE_CAPTIONS=[
-    '萬物未萌，靜候靈種。',
-    '靈種入土，根脈開始積蓄力量。',
-    '種子破土，初生嫩芽迎向天光。',
-    '雙葉初展，幼苗開始穩穩扎根。',
-    '幼苗初立，日積月累向上生長。',
-    '小樹成形，根深枝展。',
-    '青木舒枝，逐漸伸展成蔭。',
-    '蒼樹成蔭，離最後只差最後一步。',
-    '世界初成，靈樹巍然佇立。'
-  ];
-  // 節錄自《皇明祖訓·序》，每次進入靈樹隨機顯示一條。
+  const auth=document.getElementById('meditation-auth');
+  const notice=document.getElementById('meditation-notice');
+  const monthList=document.getElementById('meditation-month-list');
+  const reviewList=document.getElementById('meditation-review-list');
+  const monthHeading=document.getElementById('meditation-current-month');
   const QUOTES=[
     '朝夕親覽，以求至當。',
     '民漸知禁。',
@@ -72,134 +34,133 @@
     '防微杜漸，思患預防。',
     '丕承基業，永底于昌。'
   ];
-  const HANG_POSITIONS=[
-    [32,45],[43,31],[55,38],[64,48],[37,58],[53,58],
-    [70,37],[27,37],[47,47],[61,29],[42,67],[57,69]
-  ];
-
+  let reviewByWeek=new Map();
+  let selectedMonth='';
+  const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const todayISO=()=>{
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+    return p.year+'-'+p.month+'-'+p.day;
+  };
   function show(el,msg,type){
     el.textContent=msg||'';
     el.className='notice '+(type||'')+(msg?'':' hidden');
   }
-
-  function renderStageImage(stage){
-    const scene=document.getElementById('world-tree-scene');
-    fallback.dataset.stage=String(stage);
-    fallback.classList.remove('hidden');
-    image.classList.add('hidden');
-    // Default canvas ratio is 16:9; once an uploaded image loads, the scene
-    // adopts that image's intrinsic ratio so no old frame/gutters protrude.
-    scene.style.aspectRatio='16 / 9';
-    const fitToImage=()=>{
-      if(image.naturalWidth>0 && image.naturalHeight>0){
-        scene.style.aspectRatio=image.naturalWidth+' / '+image.naturalHeight;
-        image.classList.remove('hidden');
-        fallback.classList.add('hidden');
-      }
-    };
-    image.onload=fitToImage;
-    image.onerror=()=>{
-      scene.style.aspectRatio='16 / 9';
-      image.classList.add('hidden');
-      fallback.classList.remove('hidden');
-    };
-    image.src=STAGE_IMAGES[stage-1] || STAGE_IMAGES[0];
-    if(image.complete && image.naturalWidth>0) fitToImage();
+  function parseISO(value){return new Date(value+'T00:00:00Z');}
+  function isoDate(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0');}
+  function addDays(value,days){const d=parseISO(value);d.setUTCDate(d.getUTCDate()+days);return isoDate(d);}
+  function mondayOf(value){
+    const d=parseISO(value);
+    const day=d.getUTCDay()||7;
+    d.setUTCDate(d.getUTCDate()-(day-1));
+    return isoDate(d);
   }
-
-  function attachFruitImageFallbacks(root){
-    root.querySelectorAll('img.gold-fruit-image').forEach(img=>{
-      const parent=img.parentElement;
-      const ready=()=>parent.classList.add('image-ready');
-      const failed=()=>parent.classList.remove('image-ready');
-      img.addEventListener('load',ready,{once:true});
-      img.addEventListener('error',failed,{once:true});
-      if(img.complete){
-        if(img.naturalWidth>0) ready();
-        else failed();
-      }
+  function monthKey(value){return String(value).slice(0,7);}
+  function monthLabel(key){
+    const parts=key.split('-');
+    return parts[0]+'年'+Number(parts[1])+'月';
+  }
+  function shortDate(value){
+    const d=parseISO(value);
+    return (d.getUTCMonth()+1)+'/'+d.getUTCDate();
+  }
+  function fullDateRange(start){
+    const end=addDays(start,6);
+    const a=parseISO(start), b=parseISO(end);
+    if(a.getUTCFullYear()===b.getUTCFullYear()&&a.getUTCMonth()===b.getUTCMonth()){
+      return a.getUTCFullYear()+'/'+shortDate(start)+'–'+shortDate(end);
+    }
+    return a.getUTCFullYear()+'/'+shortDate(start)+'–'+b.getUTCFullYear()+'/'+shortDate(end);
+  }
+  function getMondaysForMonth(key,includeThrough){
+    const [year,month]=key.split('-').map(Number);
+    const first=new Date(Date.UTC(year,month-1,1));
+    const lastDay=new Date(Date.UTC(year,month,0)).getUTCDate();
+    const result=[];
+    for(let day=1;day<=lastDay;day++){
+      const d=new Date(Date.UTC(year,month-1,day));
+      if(d.getUTCDay()!==1)continue;
+      const value=isoDate(d);
+      if(includeThrough&&value>includeThrough)continue;
+      result.push(value);
+    }
+    return result;
+  }
+  function gradeLabel(rating){
+    if(rating==='長進')return '<span class="meditation-grade meditation-grade-progress">長進</span>';
+    if(rating==='尚可')return '<span class="meditation-grade meditation-grade-fair">尚可</span>';
+    if(rating==='不及')return '<span class="meditation-grade meditation-grade-needs">不及</span>';
+    return '<span class="meditation-grade meditation-grade-pending">尚未評核</span>';
+  }
+  function renderMonths(){
+    const currentMonth=monthKey(todayISO());
+    const months=new Set([currentMonth]);
+    reviewByWeek.forEach((_,week)=>months.add(monthKey(week)));
+    const ordered=[...months].sort((a,b)=>b.localeCompare(a));
+    if(!ordered.includes(selectedMonth))selectedMonth=currentMonth;
+    monthList.innerHTML=ordered.map(key=>'<button type="button" class="meditation-month-item'+(key===selectedMonth?' active':'')+'" data-month="'+key+'">'+
+      '<span>'+esc(monthLabel(key))+'</span><small>'+(key===currentMonth?'本月':'歷史評核')+'</small></button>').join('');
+    monthList.querySelectorAll('.meditation-month-item').forEach(button=>{
+      button.addEventListener('click',()=>{
+        selectedMonth=button.dataset.month;
+        renderMonths();
+        renderWeeks();
+      });
     });
   }
-
-  function renderFruits(hangingCount,fallenCount,isMaxStage){
-    hanging.innerHTML='';
-    groundFruits.innerHTML='';
-
-    // Each successful answer after reaching stage nine becomes one fruit.
-    // Fruit images are positioned individually, so the tree can accumulate them.
-    if(isMaxStage && hangingCount>0){
-      const visible=Math.min(hangingCount,HANG_POSITIONS.length);
-      hanging.innerHTML=HANG_POSITIONS.slice(0,visible).map((p,i)=>
-        '<span class="tree-fruit-unit" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i*.08)+'s"><img class="gold-fruit-image" src="assets/world-tree/fruit-gold.png" alt=""><i class="gold-fruit-fallback"></i></span>'
-      ).join('');
-      if(hangingCount>visible){
-        hanging.innerHTML+='<span class="tree-fruit-extra">+'+(hangingCount-visible)+'</span>';
-      }
-      attachFruitImageFallbacks(hanging);
+  function renderWeeks(){
+    monthHeading.textContent=monthLabel(selectedMonth);
+    const currentMonth=monthKey(todayISO());
+    const currentMonday=mondayOf(todayISO());
+    const through=selectedMonth===currentMonth?currentMonday:null;
+    const mondays=getMondaysForMonth(selectedMonth,through);
+    const availableWeeks=[...reviewByWeek.keys()].filter(w=>monthKey(w)===selectedMonth);
+    const weeks=[...new Set([...mondays,...availableWeeks])].sort((a,b)=>a.localeCompare(b));
+    if(!weeks.length){
+      reviewList.innerHTML='<div class="empty-state">這個月份暫時沒有評核紀錄。</div>';
+      return;
     }
-
-    // Each fallen fruit remains visible on the ground. Positions are stable,
-    // allowing the pile to grow as more fruit drops over time.
-    const visibleGround=Math.min(fallenCount,120);
-    const dots=[];
-    for(let i=0;i<visibleGround;i++){
-      const left=7+((i*37)%86);
-      const top=8+((i*23)%78);
-      const size=13+(i%5);
-      const tilt=((i%7)-3)*5;
-      dots.push(
-        '<span class="ground-fruit-unit" style="left:'+left+'%;top:'+top+'%;width:'+size+'px;height:'+size+'px;transform:rotate('+tilt+'deg)"><img class="gold-fruit-image" src="assets/world-tree/fruit-gold.png" alt=""><i class="gold-fruit-fallback"></i></span>'
-      );
-    }
-    groundFruits.innerHTML=dots.join('');
-    if(fallenCount>visibleGround){
-      groundFruits.innerHTML+='<span class="ground-fruit-extra">+'+(fallenCount-visibleGround)+' 顆</span>';
-    }
-    attachFruitImageFallbacks(groundFruits);
+    reviewList.innerHTML=weeks.map((week,index)=>{
+      const item=reviewByWeek.get(week);
+      const rating=item?gradeLabel(item.rating):gradeLabel('');
+      const comment=item&&item.comment?'<div class="meditation-teacher-comment"><span>老師評語</span><p>'+esc(item.comment).replace(/\n/g,'<br>')+'</p></div>':'<p class="meditation-no-comment">'+(item?'老師暫未留下評語。':'等待老師評核。')+'</p>';
+      return '<article class="meditation-review-card">'+
+        '<div class="meditation-review-head"><div><p class="eyebrow">第 '+(index+1)+' 週</p><h3>'+esc(fullDateRange(week))+'</h3></div>'+rating+'</div>'+
+        comment+
+      '</article>';
+    }).join('');
   }
-
-  function render(data){
-    const stage=Math.max(1,Math.min(9,Number(data.stage)||1));
-    const isMax=stage===9;
-    document.getElementById('tree-stage-name').textContent=data.stage_name||'一方靈土';
-    document.getElementById('tree-stage-caption').textContent=STAGE_CAPTIONS[stage-1];
-
-    const double=!!data.double_active;
-    document.getElementById('tree-sun').classList.toggle('hidden',!double);
-    document.getElementById('tree-moon').classList.toggle('hidden',double);
-
-    renderStageImage(stage);
-    renderFruits(Number(data.hanging_fruits)||0,Number(data.fallen_fruits)||0,isMax);
-  }
-
   function showRandomQuote(){
     const phrase=QUOTES[Math.floor(Math.random()*QUOTES.length)];
     document.getElementById('ancestor-quote').textContent='「'+phrase+'」';
   }
-
-  async function loadTree(){
+  async function loadReviews(){
     if(api.tokenRole()!=='student'){
-      auth.textContent='請先從首頁登入學生身份，再進入靈樹。';
+      auth.textContent='請先從首頁登入學生身份，再查看打坐週評核。';
       auth.className='notice error';
+      reviewList.innerHTML='<div class="empty-state">登入學生帳號後即可查看個人評核。</div>';
       return;
     }
     try{
-      const data=await api.get('/student/world-tree');
-      render(data);
+      const data=await api.get('/student/meditation-reviews');
+      reviewByWeek=new Map((data.reviews||[]).map(item=>[item.week_start,item]));
+      selectedMonth=monthKey(todayISO());
+      renderMonths();
+      renderWeeks();
     }catch(err){
       if(err.status===401){
         api.clearToken();
         location.href='index.html';
         return;
       }
-      show(notice,err.message||'暫時無法讀取靈樹資料。','error');
+      show(notice,err.message||'暫時無法讀取打坐評核。','error');
+      reviewList.innerHTML='<div class="empty-state">目前未能載入評核資料，請稍後再試。</div>';
     }
   }
-
-  document.getElementById('tree-logout').addEventListener('click',()=>{
+  document.getElementById('meditation-logout').addEventListener('click',()=>{
     api.clearToken();
     location.href='index.html';
   });
   showRandomQuote();
-  loadTree();
+  loadReviews();
 })();
