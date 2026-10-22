@@ -4,7 +4,7 @@
   const loginError=document.getElementById('admin-login-error');
   const notice=document.getElementById('admin-notice');
   const tabs=[...document.querySelectorAll('.tab')];
-  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections'),lessons:document.getElementById('tab-lessons')};
+  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),meditation:document.getElementById('tab-meditation'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections'),lessons:document.getElementById('tab-lessons')};
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Taipei'});
   function show(el,msg,type){ el.textContent=msg||''; el.className='notice '+(type||'')+(msg?'':' hidden'); }
@@ -22,6 +22,9 @@
   async function openAdmin(){
     loginView.classList.add('hidden'); adminView.classList.remove('hidden');
     await Promise.all([loadStudents(),loadQuestions(),loadSettings(),loadReflectionStudents(),loadLessons()]);
+    const weekInput=document.getElementById('meditation-week-start');
+    if(!weekInput.value)weekInput.value=mondayOf(today());
+    await loadMeditationWeek();
     const d=new Date(); document.getElementById('results-date').value=d.toLocaleDateString('en-CA',{timeZone:'UTC'});
   }
 
@@ -45,6 +48,81 @@
   async function saveQuestion(e){
     e.preventDefault(); const payload={question_date:document.getElementById('question-date').value,question_text:document.getElementById('question-text-admin').value.trim(),option1:document.getElementById('option1-admin').value.trim(),option2:document.getElementById('option2-admin').value.trim(),correct_option:Number(document.getElementById('correct-option').value)};
     try{await api.post('/admin/questions',payload);show(notice,'題目已儲存。','success');await loadQuestions();}catch(err){show(notice,err.message,'error');}
+  }
+
+  function mondayOf(value){
+    const d=new Date(String(value)+'T00:00:00Z');
+    if(Number.isNaN(d.getTime()))return '';
+    const day=d.getUTCDay()||7;
+    d.setUTCDate(d.getUTCDate()-(day-1));
+    return d.toISOString().slice(0,10);
+  }
+  function datePlusDays(value,days){
+    const d=new Date(String(value)+'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate()+days);
+    return d.toISOString().slice(0,10);
+  }
+  function isMonday(value){
+    const d=new Date(String(value)+'T00:00:00Z');
+    return /^\\d{4}-\\d{2}-\\d{2}$/.test(String(value))&&!Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value&&d.getUTCDay()===1;
+  }
+  async function loadMeditationWeek(){
+    const input=document.getElementById('meditation-week-start');
+    const list=document.getElementById('meditation-admin-list');
+    const period=document.getElementById('meditation-week-period');
+    if(!input.value)input.value=mondayOf(today());
+    if(!isMonday(input.value)){
+      show(notice,'請選擇星期一作為評核週的開始日期。','error');
+      return;
+    }
+    const start=input.value;
+    const end=datePlusDays(start,6);
+    period.textContent='評核期間：'+start+' 至 '+end+'（星期一至星期日）';
+    list.innerHTML='<div class="empty-state">正在載入學生名單……</div>';
+    try{
+      const data=await api.get('/admin/meditation-reviews?week_start='+encodeURIComponent(start));
+      const rows=data.rows||[];
+      if(!rows.length){
+        list.innerHTML='<div class="empty-state">目前沒有學生名單。</div>';
+        return;
+      }
+      const grades=['長進','尚可','不及'];
+      list.innerHTML='<table class="meditation-admin-table"><thead><tr><th>學生</th><th>評核（單選）</th><th>老師評語</th><th>儲存</th></tr></thead><tbody>'+
+        rows.map(row=>{
+          const gradeOptions=grades.map(grade=>'<label class="meditation-admin-grade"><input type="radio" name="meditation-grade-'+esc(row.id)+'" value="'+grade+'" '+(row.rating===grade?'checked':'')+'><span>'+grade+'</span></label>').join('');
+          return '<tr data-student-id="'+esc(row.id)+'">'+
+            '<td><strong>'+esc(row.display_name)+'</strong>'+(row.active?'':'<div class="tiny-note">已停用學生</div>')+'</td>'+
+            '<td><div class="meditation-admin-grades">'+gradeOptions+'</div></td>'+
+            '<td><input type="text" class="field meditation-admin-comment" data-comment-for="'+esc(row.id)+'" maxlength="500" value="'+esc(row.comment||'')+'" placeholder="寫一句簡短評語"></td>'+
+            '<td><button type="button" class="secondary-btn meditation-review-save" data-id="'+esc(row.id)+'">儲存</button><div class="meditation-save-status" data-status-for="'+esc(row.id)+'">'+(row.rating?'已儲存':'尚未評核')+'</div></td>'+
+          '</tr>';
+        }).join('')+'</tbody></table>';
+      list.querySelectorAll('.meditation-review-save').forEach(button=>button.addEventListener('click',()=>saveMeditationReview(button.dataset.id,start)));
+    }catch(err){
+      list.innerHTML='<div class="empty-state">無法載入本週名單。</div>';
+      show(notice,err.message||'無法載入打坐評核名單。','error');
+    }
+  }
+  async function saveMeditationReview(studentId,weekStart){
+    const checked=document.querySelector('input[name="meditation-grade-'+studentId+'"]:checked');
+    const comment=document.querySelector('.meditation-admin-comment[data-comment-for="'+studentId+'"]');
+    const status=document.querySelector('.meditation-save-status[data-status-for="'+studentId+'"]');
+    if(!checked)return show(notice,'請先為這位學生選擇「長進」、「尚可」或「不及」。','error');
+    const button=document.querySelector('.meditation-review-save[data-id="'+studentId+'"]');
+    if(button)button.disabled=true;
+    try{
+      await api.put('/admin/meditation-reviews/'+encodeURIComponent(studentId),{
+        week_start:weekStart,
+        rating:checked.value,
+        comment:comment?comment.value.trim():''
+      });
+      if(status)status.textContent='已儲存';
+      show(notice,'評核已儲存。','success');
+    }catch(err){
+      show(notice,err.message||'評核儲存失敗。','error');
+    }finally{
+      if(button)button.disabled=false;
+    }
   }
 
   async function loadSettings(){try{const d=await api.get('/admin/settings');document.getElementById('publish-time').value=d.publish_time;document.getElementById('close-time').value=d.close_time;document.getElementById('timezone').value=d.timezone;}catch(err){show(notice,err.message,'error');}}
@@ -193,6 +271,8 @@
   document.getElementById('question-form').addEventListener('submit',saveQuestion);
   document.getElementById('settings-form').addEventListener('submit',saveSettings);
   document.getElementById('load-results').addEventListener('click',loadResults);
+  document.getElementById('load-meditation-week').addEventListener('click',loadMeditationWeek);
+  document.getElementById('meditation-week-start').addEventListener('change',()=>{if(isMonday(document.getElementById('meditation-week-start').value))loadMeditationWeek();});
   document.getElementById('lesson-form').addEventListener('submit',saveLesson);
   document.getElementById('lesson-clear').addEventListener('click',clearLessonForm);
   document.getElementById('reflection-student-select').addEventListener('change',e=>loadAdminReflections(e.target.value));
