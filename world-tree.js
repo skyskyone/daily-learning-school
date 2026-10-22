@@ -123,7 +123,7 @@
     reviewList.innerHTML=weeks.map((week,index)=>{
       const item=reviewByWeek.get(week);
       const rating=item?gradeLabel(item.rating):gradeLabel('');
-      const comment=item&&item.comment?'<div class="meditation-teacher-comment"><span>師父評語</span><p>'+esc(item.comment).replace(/\n/g,'<br>')+'</p></div>':'<p class="meditation-no-comment">'+(item?'老師暫未留下評語。':'等待老師評核。')+'</p>';
+      const comment=item&&item.comment?'<div class="meditation-teacher-comment"><span>師父評語</span><p>'+esc(item.comment).replace(/\n/g,'<br>')+'</p></div>':'<p class="meditation-no-comment">'+(item?'有問題才有評語。':'等待評核。')+'</p>';
       return '<article class="meditation-review-card">'+
         '<div class="meditation-review-head"><div><p class="eyebrow">第 '+(index+1)+' 週</p><h3>'+esc(fullDateRange(week))+'</h3></div>'+rating+'</div>'+
         comment+
