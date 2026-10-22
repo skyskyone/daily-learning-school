@@ -72,6 +72,8 @@
     const period=document.getElementById('meditation-week-period');
     if(!input.value)input.value=mondayOf(today());
     if(!isMonday(input.value)){
+      period.textContent='評核週的開始日期必須是星期一。';
+      list.innerHTML='<div class="empty-state">請選擇星期一，再載入學生名單。</div>';
       show(notice,'請選擇星期一作為評核週的開始日期。','error');
       return;
     }
@@ -272,7 +274,7 @@
   document.getElementById('settings-form').addEventListener('submit',saveSettings);
   document.getElementById('load-results').addEventListener('click',loadResults);
   document.getElementById('load-meditation-week').addEventListener('click',loadMeditationWeek);
-  document.getElementById('meditation-week-start').addEventListener('change',()=>{if(isMonday(document.getElementById('meditation-week-start').value))loadMeditationWeek();});
+  document.getElementById('meditation-week-start').addEventListener('change',loadMeditationWeek);
   document.getElementById('lesson-form').addEventListener('submit',saveLesson);
   document.getElementById('lesson-clear').addEventListener('click',clearLessonForm);
   document.getElementById('reflection-student-select').addEventListener('change',e=>loadAdminReflections(e.target.value));
