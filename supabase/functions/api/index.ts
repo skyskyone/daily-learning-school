@@ -36,7 +36,7 @@ function text(v: unknown, max = 2000) {
 function bad(message: string, status = 400) { return json({ error: message }, status); }
 
 function isMondayDate(value: string) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const d = new Date(value + "T00:00:00Z");
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value && d.getUTCDay() === 1;
 }
@@ -795,7 +795,7 @@ async function route(req: Request) {
     });
   }
 
-  const meditationReviewMatch = path.match(/^\\/admin\\/meditation-reviews\\/([0-9a-f-]+)$/i);
+  const meditationReviewMatch = path.match(/^\/admin\/meditation-reviews\/([0-9a-f-]+)$/i);
   if (meditationReviewMatch && req.method === "PUT") {
     await session(req, "admin");
     const studentId = meditationReviewMatch[1];
