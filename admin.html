@@ -36,6 +36,7 @@
         <button data-tab="students" class="tab active">學生</button>
         <button data-tab="questions" class="tab">每日題目</button>
         <button data-tab="results" class="tab">每日結算</button>
+        <button data-tab="meditation" class="tab">打坐週評核</button>
         <button data-tab="settings" class="tab">時間設定</button>
         <button data-tab="reflections" class="tab">心得管理</button>
         <button data-tab="lessons" class="tab">教學影片</button>
@@ -71,6 +72,17 @@
           <button id="load-results" class="secondary-btn">查看結算</button>
         </div>
         <div id="results-table" class="table-wrap"></div>
+      </section>
+
+      <section id="tab-meditation" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">Weekly Meditation Review</p><h2>打坐週評核</h2></div></div>
+        <p class="muted">每週選擇一次評核日期（星期一），為學生勾選一個等級並填寫簡短評語。每位學生獨立儲存，可在之後修改。</p>
+        <div class="inline-controls meditation-week-controls">
+          <label>評核週開始日期（星期一）<input id="meditation-week-start" type="date" class="field" required></label>
+          <button id="load-meditation-week" class="secondary-btn" type="button">載入本週名單</button>
+        </div>
+        <p id="meditation-week-period" class="tiny-note"></p>
+        <div id="meditation-admin-list" class="table-wrap"><div class="empty-state">載入後會在這裡顯示學生名單。</div></div>
       </section>
 
       <section id="tab-reflections" class="admin-section hidden">

@@ -462,3 +462,78 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
   background:transparent !important;
 }
 
+
+
+/* 打坐週評核：左側月份歷史、右側每週評核卡 */
+.meditation-layout{display:grid;grid-template-columns:minmax(180px,245px) minmax(0,1fr);gap:18px;align-items:start}
+.meditation-history-panel,.meditation-main-panel{min-width:0;padding:22px}
+.meditation-history-panel h2{font-size:24px;margin-bottom:8px}
+.meditation-history-panel>.muted{font-size:13px;line-height:1.8}
+.meditation-month-list{display:grid;gap:8px;margin-top:16px}
+.meditation-month-item{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;padding:12px 10px;border:1px solid rgba(185,168,137,.65);background:#fbf7ea;color:var(--ink);text-align:left;cursor:pointer}
+.meditation-month-item span{font-size:14px;font-weight:600}
+.meditation-month-item small{font-size:11px;color:var(--muted);white-space:nowrap}
+.meditation-month-item.active{border-color:var(--seal);background:#f1e2c9;box-shadow:inset 3px 0 0 var(--seal)}
+.meditation-review-intro{font-size:14px;line-height:1.9;color:var(--muted);margin:0 0 18px}
+.meditation-review-list{display:grid;gap:12px}
+.meditation-review-card{min-width:0;border:1px solid rgba(185,168,137,.72);background:rgba(255,250,236,.72);padding:16px}
+.meditation-review-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.meditation-review-head .eyebrow{margin-bottom:4px}
+.meditation-review-head h3{font-size:17px;line-height:1.6;margin:0;overflow-wrap:anywhere}
+.meditation-grade{display:inline-flex;align-items:center;justify-content:center;min-width:66px;border:1px solid;padding:5px 10px;font-size:13px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.meditation-grade-progress{color:#426242;border-color:#91ae85;background:#eaf1e1}
+.meditation-grade-fair{color:#705c35;border-color:#c7b17b;background:#f5edd8}
+.meditation-grade-needs{color:#875044;border-color:#c89a8c;background:#f7e7e0}
+.meditation-grade-pending{color:#776e61;border-color:#d5cbbb;background:#f1eee7}
+.meditation-teacher-comment{border-top:1px solid rgba(185,168,137,.45);margin-top:13px;padding-top:11px}
+.meditation-teacher-comment span{font-size:12px;color:var(--seal);font-weight:700;letter-spacing:.06em}
+.meditation-teacher-comment p{margin:4px 0 0;line-height:1.85;overflow-wrap:anywhere}
+.meditation-no-comment{font-size:13px;color:var(--muted);margin:12px 0 0}
+.meditation-ancestor-panel{margin-top:18px}
+.meditation-week-controls{align-items:end;flex-wrap:wrap;margin:18px 0 8px}
+.meditation-week-controls label{min-width:230px;max-width:320px;font-size:13px;color:var(--muted)}
+.meditation-week-controls .field{margin-top:6px}
+.meditation-week-controls .secondary-btn{margin:0}
+.meditation-admin-table{min-width:850px}
+.meditation-admin-table th,.meditation-admin-table td{vertical-align:middle}
+.meditation-admin-grades{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.meditation-admin-grade{position:relative;display:inline-flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid rgba(185,168,137,.7);background:#fbf7ea;cursor:pointer;white-space:nowrap;font-size:13px}
+.meditation-admin-grade:has(input:checked){border-color:var(--seal);background:#f1e2c9;box-shadow:inset 0 0 0 1px var(--seal)}
+.meditation-admin-grade input{margin:0;accent-color:var(--seal)}
+.meditation-admin-comment{min-width:210px;margin:0}
+.meditation-save-status{margin-top:5px;font-size:11px;color:var(--muted);white-space:nowrap}
+@media(max-width:760px){
+  .meditation-layout{grid-template-columns:1fr;gap:12px}
+  .meditation-history-panel,.meditation-main-panel{padding:16px}
+  .meditation-month-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .meditation-month-item{align-items:flex-start;flex-direction:column;gap:3px}
+  .meditation-review-card{padding:13px}
+  .meditation-week-controls{display:grid;grid-template-columns:1fr}
+  .meditation-week-controls label{max-width:none;min-width:0}
+  .meditation-week-controls .secondary-btn{width:100%}
+}
+
+
+/* 月份清單固定在左側視窗範圍內；評核等級保留單選語意但呈現方格 */
+.meditation-history-panel{position:sticky;top:16px}
+.meditation-month-list{max-height:min(60vh,620px);overflow-y:auto;padding-right:3px}
+.meditation-admin-grade input{
+  appearance:none;
+  -webkit-appearance:none;
+  display:inline-grid;
+  place-content:center;
+  width:14px;
+  height:14px;
+  flex:0 0 14px;
+  border:1px solid #9d927f;
+  border-radius:2px;
+  background:#fffdf7;
+  margin:0;
+  cursor:pointer;
+}
+.meditation-admin-grade input:checked{background:var(--seal);border-color:var(--seal)}
+.meditation-admin-grade input:checked::after{content:"✓";font-size:11px;line-height:12px;color:#fff}
+@media(max-width:760px){
+  .meditation-history-panel{position:static}
+  .meditation-month-list{max-height:35vh}
+}
