@@ -35,6 +35,12 @@ function text(v: unknown, max = 2000) {
 
 function bad(message: string, status = 400) { return json({ error: message }, status); }
 
+function isMondayDate(value: string) {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value && d.getUTCDay() === 1;
+}
+
 function constantEqual(a: string, b: string) {
   const aa = new TextEncoder().encode(a);
   const bb = new TextEncoder().encode(b);
@@ -366,6 +372,17 @@ async function route(req: Request) {
     return json({display_name:data.display_name});
   }
 
+  if (path === "/student/meditation-reviews" && req.method === "GET") {
+    const s = await session(req, "student");
+    const { data, error } = await db.from("meditation_reviews")
+      .select("week_start,rating,comment,updated_at")
+      .eq("student_id", s.student_id)
+      .order("week_start", { ascending: false })
+      .limit(600);
+    if (error) throw error;
+    return json({ reviews: data || [] });
+  }
+
   if (path === "/student/today" && req.method === "GET") {
     const s = await session(req,"student");
     const cfg = await settings(); const local = localNow(cfg.timezone); const open=minutesOf(cfg.publish_time), close=minutesOf(cfg.close_time);
@@ -405,104 +422,6 @@ async function route(req: Request) {
     const cfg=await settings(); const close=minutesOf(cfg.close_time); const local=localNow(cfg.timezone); const week=currentWeek(local.date); const currentDone=local.date>week.end||(local.date===week.end&&local.minutes>=close); const target=currentDone?week:{start:addDays(week.start,-7),end:addDays(week.end,-7)};
     const {data:checkQs,error:qe}=await db.from("questions").select("id,question_date").gte("question_date",target.start).lte("question_date",target.end); if(qe)throw qe;
     return json({settled:true,week_start:target.start,week_end:target.end,rows:rankRows(await leaderboardForWeek(target.start,target.end)),has_questions:(checkQs||[]).length>0});
-  }
-
-  if (path === "/student/world-tree" && req.method === "GET") {
-    const s = await session(req, "student");
-    const cfg = await settings();
-    const local = localNow(cfg.timezone);
-    const closeMinutes = minutesOf(cfg.close_time);
-
-    const { data: allQuestions, error: qe } = await db.from("questions")
-      .select("id,question_date,correct_option")
-      .lte("question_date", local.date)
-      .order("question_date", { ascending: true })
-      .limit(5000);
-    if (qe) throw qe;
-
-    const settledQuestions = (allQuestions || []).filter((q:any) =>
-      q.question_date < local.date ||
-      (q.question_date === local.date && local.minutes >= closeMinutes)
-    );
-    const { data: submissions, error: se } = await db.from("submissions")
-      .select("question_id,choice")
-      .eq("student_id", s.student_id);
-    if (se) throw se;
-    const submitted = new Map((submissions || []).map((x:any) => [x.question_id, x.choice]));
-
-    // 慢速養成：連續答對時第 2 天起每日 +2 點；不間斷作答約 5 年抵達第九階。
-    const thresholds = [0, 14, 60, 180, 365, 730, 1460, 2555, 3650];
-    const stageNames = [
-      "一方靈土", "靈種入土", "破土萌芽", "初展雙葉", "幼苗初立",
-      "小樹成形", "青木舒枝", "蒼樹成蔭", "世界樹"
-    ];
-    let growth = 0;
-    let stage = 1;
-    let streak = 0;
-    let previousCorrectDate:string | null = null;
-    let correctDays = 0;
-    const fruitDates:string[] = [];
-
-    for (const q of settledQuestions) {
-      const choice = submitted.get(q.id);
-      const correct = choice === q.correct_option;
-      if (!correct) {
-        streak = 0;
-        previousCorrectDate = null;
-        continue;
-      }
-
-      streak = previousCorrectDate && addDays(previousCorrectDate, 1) === q.question_date
-        ? streak + 1
-        : 1;
-      previousCorrectDate = q.question_date;
-      correctDays += 1;
-      const gain = streak >= 2 ? 2 : 1;
-
-      if (stage < 9) {
-        growth = Math.min(thresholds[8], growth + gain);
-        for (let i = thresholds.length - 1; i >= 0; i--) {
-          if (growth >= thresholds[i]) {
-            stage = i + 1;
-            break;
-          }
-        }
-      } else {
-        for (let i = 0; i < gain; i++) fruitDates.push(q.question_date);
-      }
-    }
-
-    const dayStamp = (date:string) => Date.parse(date + "T00:00:00Z");
-    let hangingFruits = 0;
-    let fallenFruits = 0;
-    const todayStamp = dayStamp(local.date);
-    for (const fruitDate of fruitDates) {
-      const age = Math.floor((todayStamp - dayStamp(fruitDate)) / 86400000);
-      if (age < 2) hangingFruits += 1;
-      else fallenFruits += 1;
-    }
-
-    const previousThreshold = thresholds[Math.max(0, stage - 1)];
-    const nextThreshold = stage >= 9 ? thresholds[8] : thresholds[stage];
-    const progressPercent = stage >= 9
-      ? 100
-      : Math.max(0, Math.min(100, Math.round(((growth - previousThreshold) / Math.max(1, nextThreshold - previousThreshold)) * 100)));
-
-    return json({
-      date: local.date,
-      stage,
-      stage_name: stageNames[stage - 1],
-      growth_value: growth,
-      final_growth_value: thresholds[8],
-      progress_percent: progressPercent,
-      correct_days: correctDays,
-      current_streak: streak,
-      double_active: streak >= 2,
-      max_stage: stage >= 9,
-      hanging_fruits: hangingFruits,
-      fallen_fruits: fallenFruits,
-      settled_days: settledQuestions.length
-    });
   }
 
   if (path === "/student/monthly-leaderboard" && req.method === "GET") {
@@ -845,6 +764,57 @@ async function route(req: Request) {
     const {error}=await db.from("students").update(patch).eq("id",id);if(error)throw error; return json({ok:true});
   }
 
+  if (path === "/admin/meditation-reviews" && req.method === "GET") {
+    await session(req, "admin");
+    const weekStart = text(url.searchParams.get("week_start"), 10);
+    if (!isMondayDate(weekStart)) return bad("評核週必須以有效的星期一日期開始。", 422);
+    const weekEnd = addDays(weekStart, 6);
+    const { data: students, error: studentError } = await db.from("students")
+      .select("id,display_name,active")
+      .order("display_name");
+    if (studentError) throw studentError;
+    const { data: reviews, error: reviewError } = await db.from("meditation_reviews")
+      .select("student_id,week_start,rating,comment,updated_at")
+      .eq("week_start", weekStart);
+    if (reviewError) throw reviewError;
+    const byStudent = new Map((reviews || []).map((item: any) => [item.student_id, item]));
+    return json({
+      week_start: weekStart,
+      week_end: weekEnd,
+      rows: (students || []).map((student: any) => {
+        const review: any = byStudent.get(student.id);
+        return {
+          id: student.id,
+          display_name: student.display_name,
+          active: student.active,
+          rating: review?.rating || null,
+          comment: review?.comment || "",
+          updated_at: review?.updated_at || null
+        };
+      })
+    });
+  }
+
+  const meditationReviewMatch = path.match(/^\\/admin\\/meditation-reviews\\/([0-9a-f-]+)$/i);
+  if (meditationReviewMatch && req.method === "PUT") {
+    await session(req, "admin");
+    const studentId = meditationReviewMatch[1];
+    const weekStart = text(body.week_start, 10);
+    const rating = text(body.rating, 10);
+    const comment = text(body.comment, 500);
+    if (!isMondayDate(weekStart)) return bad("評核週必須以有效的星期一日期開始。", 422);
+    if (!["長進", "尚可", "不及"].includes(rating)) return bad("請選擇長進、尚可或不及其中一個評核等級。", 422);
+    const { error } = await db.from("meditation_reviews").upsert({
+      student_id: studentId,
+      week_start: weekStart,
+      rating,
+      comment,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "student_id,week_start" });
+    if (error) throw error;
+    return json({ ok: true, week_start: weekStart, rating, comment });
+  }
+
   if (path === "/admin/lessons" && req.method === "GET") {
     await session(req, "admin");
     const { data, error } = await db.from("teaching_lessons")
@@ -1008,6 +978,9 @@ Deno.serve(async (req) => {
     if (err instanceof Error && err.message === "UNAUTHORIZED") return json({error:"登入已失效，請重新登入。"},401);
     const dbErr = err as { code?: string; message?: string };
     const detail = String(dbErr?.message || "");
+    if ((dbErr?.code === "42P01" || dbErr?.code === "PGRST205" || /relation .*?meditation_reviews.*?does not exist/i.test(detail)) && /meditation_reviews/i.test(detail)) {
+      return json({error:"打坐評核資料表尚未建立或尚未同步。請在 Supabase SQL Editor 執行 20261022000000_meditation_reviews.sql，完成後再試。"},503);
+    }
     if (dbErr?.code === "42P01" || dbErr?.code === "PGRST205" || /relation .*?(teaching_lessons|lesson_comments).*?does not exist/i.test(detail)) {
       return json({error:"教學影片資料表尚未建立或尚未同步。請在 Supabase SQL Editor 執行 20261014000000_youtube_lessons.sql，完成後再試。"},503);
     }
