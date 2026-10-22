@@ -3,55 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>靈樹｜每日學堂</title>
+  <title>打坐週評核｜每日學堂</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="paper-bg world-tree-page">
+<body class="paper-bg meditation-page">
   <main class="page-shell compact-shell">
     <header class="student-header">
       <div>
         <p class="eyebrow">每日學堂</p>
-        <h1>靈樹</h1>
+        <h1>打坐週評核</h1>
       </div>
       <div class="header-actions">
         <a href="index.html">返回今日題目</a>
         <a href="reflections.html">心得區</a>
         <a href="student-history.html">作答簿</a>
-        <button id="tree-logout" class="text-btn">離開學堂</button>
+        <a href="lessons.html">教學影片</a>
+        <button id="meditation-logout" class="text-btn">離開學堂</button>
       </div>
     </header>
-    <div id="tree-auth" class="notice hidden"></div>
-    <div id="tree-notice" class="notice hidden"></div>
-    <section class="panel world-tree-panel">
-      <div class="tree-stage-heading">
-        <p class="eyebrow">靈木養成 · 九重境界</p>
-        <h2 id="tree-stage-name">一方靈土</h2>
-        <p id="tree-stage-caption" class="muted">從一方土地開始，靜候靈種。</p>
-      </div>
-      <div class="world-tree-scene" id="world-tree-scene">
-        <img id="tree-stage-image" class="tree-stage-image hidden" alt="靈樹成長階段">
-        <div id="tree-art-fallback" class="tree-art-fallback" data-stage="1" aria-label="靈樹示意圖">
-          <div class="tree-ridge ridge-back"></div>
-          <div class="tree-ridge ridge-front"></div>
-          <div class="tree-seed"></div>
-          <div class="tree-sprout"><span class="sprout-leaf sprout-left"></span><span class="sprout-leaf sprout-right"></span><span class="sprout-stem"></span></div>
-          <div class="tree-trunk"></div>
-          <div class="tree-branch tree-branch-left"></div>
-          <div class="tree-branch tree-branch-right"></div>
-          <div class="tree-canopy">
-            <i class="tree-leaf leaf-1"></i><i class="tree-leaf leaf-2"></i><i class="tree-leaf leaf-3"></i>
-            <i class="tree-leaf leaf-4"></i><i class="tree-leaf leaf-5"></i><i class="tree-leaf leaf-6"></i>
-            <i class="tree-leaf leaf-7"></i><i class="tree-leaf leaf-8"></i><i class="tree-leaf leaf-9"></i>
+
+    <div id="meditation-auth" class="notice hidden"></div>
+    <div id="meditation-notice" class="notice hidden"></div>
+
+    <section class="meditation-layout">
+      <aside class="panel meditation-history-panel">
+        <p class="eyebrow">Monthly Archive</p>
+        <h2>歷史紀錄</h2>
+        <p class="muted">選擇月份，查看該月每週評核及老師評語。</p>
+        <nav id="meditation-month-list" class="meditation-month-list" aria-label="評核歷史月份"></nav>
+      </aside>
+
+      <section class="panel meditation-main-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Weekly Review</p>
+            <h2 id="meditation-current-month">本月評核</h2>
           </div>
         </div>
-        <div id="tree-hanging-fruits" class="tree-hanging-fruits" aria-label="樹上的金色果實"></div>
-        <div class="tree-ground"></div>
-        <div id="tree-ground-fruits" class="tree-ground-fruits" aria-label="落在地上的金色果實"></div>
-        <div id="tree-sun" class="tree-celestial tree-sun hidden" aria-label="連續答對時顯示的太陽圖示"><img class="celestial-image" src="assets/world-tree/sun.png" alt=""><span class="celestial-fallback">☀</span></div>
-        <div id="tree-moon" class="tree-celestial tree-moon" aria-label="正常成長時顯示的月亮圖示"><img class="celestial-image" src="assets/world-tree/moon.png" alt=""><span class="celestial-fallback">☾</span></div>
-      </div>
+        <p class="meditation-review-intro">每週由老師檢視打坐情況。評核只供本人查看，請細閱老師的鼓勵與提醒。</p>
+        <div id="meditation-review-list" class="meditation-review-list">
+          <div class="empty-state">正在載入評核紀錄……</div>
+        </div>
+      </section>
     </section>
-    <section class="ancestor-quote-panel">
+
+    <section class="ancestor-quote-panel meditation-ancestor-panel">
       <div class="ancestor-seal">訓</div>
       <div class="ancestor-heading">皇明祖訓</div>
       <div id="ancestor-quote" class="ancestor-quote" aria-live="polite"></div>
