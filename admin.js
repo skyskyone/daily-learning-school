@@ -64,7 +64,7 @@
   }
   function isMonday(value){
     const d=new Date(String(value)+'T00:00:00Z');
-    return /^\\d{4}-\\d{2}-\\d{2}$/.test(String(value))&&!Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value&&d.getUTCDay()===1;
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value))&&!Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value&&d.getUTCDay()===1;
   }
   async function loadMeditationWeek(){
     const input=document.getElementById('meditation-week-start');
