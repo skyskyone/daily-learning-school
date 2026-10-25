@@ -372,6 +372,123 @@ async function route(req: Request) {
     return json({display_name:data.display_name});
   }
 
+  if (path === "/student/updates" && req.method === "GET") {
+    const s = await session(req, "student");
+    const { data: state, error: stateError } = await db.from("student_notification_state")
+      .select("last_acknowledged_at")
+      .eq("student_id", s.student_id)
+      .maybeSingle();
+    if (stateError) throw stateError;
+
+    // A missing cursor is initialized without showing old history as new.
+    if (!state) {
+      const { error } = await db.from("student_notification_state").insert({
+        student_id: s.student_id,
+        last_acknowledged_at: new Date().toISOString()
+      });
+      if (error && error.code !== "23505") throw error;
+      return json({ notifications: [], acknowledged_through: null });
+    }
+
+    const acknowledgedAt = state.last_acknowledged_at;
+    // Use a fixed upper bound so changes created after this request starts
+    // remain eligible for the next notification popup.
+    const snapshotAt = new Date().toISOString();
+    const [lessonResult, announcementResult, reviewResult] = await Promise.all([
+      db.from("teaching_lessons")
+        .select("id,title,created_at")
+        .gt("created_at", acknowledgedAt)
+        .lte("created_at", snapshotAt)
+        .order("created_at", { ascending: true })
+        .limit(50),
+      db.from("school_announcements")
+        .select("id,title,message,updated_at")
+        .eq("active", true)
+        .gt("updated_at", acknowledgedAt)
+        .lte("updated_at", snapshotAt)
+        .order("updated_at", { ascending: true })
+        .limit(50),
+      db.from("meditation_reviews")
+        .select("week_start,rating,comment,updated_at")
+        .eq("student_id", s.student_id)
+        .gt("updated_at", acknowledgedAt)
+        .lte("updated_at", snapshotAt)
+        .order("updated_at", { ascending: true })
+        .limit(50)
+    ]);
+    if (lessonResult.error) throw lessonResult.error;
+    if (announcementResult.error) throw announcementResult.error;
+    if (reviewResult.error) throw reviewResult.error;
+
+    const notifications: any[] = [];
+    for (const lesson of lessonResult.data || []) {
+      notifications.push({
+        type: "lesson",
+        title: "新增 YouTube 教學",
+        message: "老師上傳了新的教學「" + lesson.title + "」，可以到「教學影片」觀看。",
+        timestamp: lesson.created_at
+      });
+    }
+    for (const announcement of announcementResult.data || []) {
+      notifications.push({
+        type: "announcement",
+        title: announcement.title,
+        message: announcement.message,
+        timestamp: announcement.updated_at
+      });
+    }
+    for (const review of reviewResult.data || []) {
+      const weekEnd = addDays(review.week_start, 6);
+      const comment = String(review.comment || "").trim();
+      notifications.push({
+        type: "meditation",
+        title: "打坐評核有更新",
+        message: review.week_start + " 至 " + weekEnd + " 的評核更新為「" + review.rating + "」。" +
+          (comment ? "\\n師父評語：" + comment : ""),
+        timestamp: review.updated_at
+      });
+    }
+    notifications.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    return json({ notifications, acknowledged_through: snapshotAt });
+  }
+
+  if (path === "/student/updates/ack" && req.method === "POST") {
+    const s = await session(req, "student");
+    const rawCursor = text(body.acknowledged_through, 40);
+    const cursorMs = Date.parse(rawCursor);
+    if (!rawCursor || Number.isNaN(cursorMs) || cursorMs > Date.now() + 60_000) {
+      return bad("通知已讀時間格式不正確。", 422);
+    }
+    const cursor = new Date(cursorMs).toISOString();
+    const { data: state, error: stateError } = await db.from("student_notification_state")
+      .select("last_acknowledged_at")
+      .eq("student_id", s.student_id)
+      .maybeSingle();
+    if (stateError) throw stateError;
+
+    if (!state) {
+      const { error } = await db.from("student_notification_state").insert({
+        student_id: s.student_id,
+        last_acknowledged_at: cursor
+      });
+      if (error && error.code !== "23505") throw error;
+      if (error?.code === "23505") {
+        const { error: updateError } = await db.from("student_notification_state")
+          .update({ last_acknowledged_at: cursor })
+          .eq("student_id", s.student_id)
+          .lt("last_acknowledged_at", cursor);
+        if (updateError) throw updateError;
+      }
+    } else if (Date.parse(state.last_acknowledged_at) < cursorMs) {
+      const { error } = await db.from("student_notification_state")
+        .update({ last_acknowledged_at: cursor })
+        .eq("student_id", s.student_id)
+        .lt("last_acknowledged_at", cursor);
+      if (error) throw error;
+    }
+    return json({ ok: true });
+  }
+
   if (path === "/student/meditation-reviews" && req.method === "GET") {
     const s = await session(req, "student");
     const { data, error } = await db.from("meditation_reviews")
@@ -764,6 +881,43 @@ async function route(req: Request) {
     const {error}=await db.from("students").update(patch).eq("id",id);if(error)throw error; return json({ok:true});
   }
 
+  if (path === "/admin/announcements" && req.method === "GET") {
+    await session(req, "admin");
+    const { data, error } = await db.from("school_announcements")
+      .select("id,title,message,active,created_at,updated_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return json({ announcements: data || [] });
+  }
+
+  if (path === "/admin/announcements" && req.method === "POST") {
+    await session(req, "admin");
+    const title = text(body.title, 120);
+    const message = text(body.message, 1500);
+    if (!title || !message) return bad("請填寫通知標題及內容。", 422);
+    const { data, error } = await db.from("school_announcements")
+      .insert({ title, message, active: true })
+      .select("id,title,message,active,created_at,updated_at")
+      .single();
+    if (error) throw error;
+    return json({ ok: true, announcement: data });
+  }
+
+  const announcementMatch = path.match(/^\\/admin\\/announcements\\/([0-9a-f-]+)$/i);
+  if (announcementMatch && req.method === "PUT") {
+    await session(req, "admin");
+    if (typeof body.active !== "boolean") return bad("通知狀態不正確。", 422);
+    const { data, error } = await db.from("school_announcements")
+      .update({ active: body.active, updated_at: new Date().toISOString() })
+      .eq("id", announcementMatch[1])
+      .select("id,active")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return bad("找不到這則老師通知。", 404);
+    return json({ ok: true, announcement: data });
+  }
+
   if (path === "/admin/meditation-reviews" && req.method === "GET") {
     await session(req, "admin");
     const weekStart = text(url.searchParams.get("week_start"), 10);
@@ -978,6 +1132,9 @@ Deno.serve(async (req) => {
     if (err instanceof Error && err.message === "UNAUTHORIZED") return json({error:"登入已失效，請重新登入。"},401);
     const dbErr = err as { code?: string; message?: string };
     const detail = String(dbErr?.message || "");
+    if ((dbErr?.code === "42P01" || dbErr?.code === "PGRST205" || /relation .*?(school_announcements|student_notification_state).*?does not exist/i.test(detail)) && /(school_announcements|student_notification_state)/i.test(detail)) {
+      return json({error:"學堂更新通知資料表尚未建立或尚未同步。請在 Supabase SQL Editor 執行 20261025000000_student_update_notifications.sql，完成後再試。"},503);
+    }
     if ((dbErr?.code === "42P01" || dbErr?.code === "PGRST205" || /relation .*?meditation_reviews.*?does not exist/i.test(detail)) && /meditation_reviews/i.test(detail)) {
       return json({error:"打坐評核資料表尚未建立或尚未同步。請在 Supabase SQL Editor 執行 20261022000000_meditation_reviews.sql，完成後再試。"},503);
     }
