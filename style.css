@@ -600,3 +600,41 @@ th{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
     letter-spacing:.1em;
   }
 }
+
+
+/* 學生首次進入今日題目時顯示一次的新消息通知 */
+.updates-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(33,25,17,.56);
+  backdrop-filter:blur(3px);
+}
+.updates-overlay.hidden{display:none!important}
+.updates-dialog{
+  width:min(560px,100%);
+  max-height:min(84vh,760px);
+  overflow-y:auto;
+  padding:30px;
+  background:var(--paper);
+}
+.updates-dialog h2{font-size:clamp(25px,4vw,32px);margin-bottom:10px}
+.updates-intro{color:var(--muted);line-height:1.85;margin-bottom:18px}
+.student-updates-list{display:grid;gap:10px}
+.student-update-item{padding:14px;border:1px solid rgba(185,168,137,.75);background:rgba(255,250,236,.8);overflow-wrap:anywhere}
+.student-update-kind{display:inline-block;margin-bottom:6px;color:var(--seal);font-size:12px;font-weight:700;letter-spacing:.1em}
+.student-update-item h3{font-size:17px;line-height:1.6;margin:0 0 5px}
+.student-update-item p{font-size:14px;line-height:1.85;margin:0;white-space:normal}
+.updates-error{color:#7a2d23;font-size:13px;line-height:1.7}
+.updates-dialog .primary-btn{width:100%;margin-top:20px}
+@media(max-width:680px){
+  .updates-overlay{padding:14px}
+  .updates-dialog{padding:22px 17px;max-height:86vh}
+  .student-update-item{padding:12px}
+  .student-update-item h3{font-size:16px}
+  .student-update-item p{font-size:14px}
+}

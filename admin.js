@@ -4,7 +4,7 @@
   const loginError=document.getElementById('admin-login-error');
   const notice=document.getElementById('admin-notice');
   const tabs=[...document.querySelectorAll('.tab')];
-  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),meditation:document.getElementById('tab-meditation'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections'),lessons:document.getElementById('tab-lessons')};
+  const sections={students:document.getElementById('tab-students'),questions:document.getElementById('tab-questions'),results:document.getElementById('tab-results'),meditation:document.getElementById('tab-meditation'),settings:document.getElementById('tab-settings'),reflections:document.getElementById('tab-reflections'),lessons:document.getElementById('tab-lessons'),announcements:document.getElementById('tab-announcements')};
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Taipei'});
   function show(el,msg,type){ el.textContent=msg||''; el.className='notice '+(type||'')+(msg?'':' hidden'); }
@@ -21,7 +21,7 @@
   async function tryExisting(){ if(api.tokenRole()!=='admin')return; try{await api.get('/admin/me');await openAdmin();}catch(_){api.clearToken();} }
   async function openAdmin(){
     loginView.classList.add('hidden'); adminView.classList.remove('hidden');
-    await Promise.all([loadStudents(),loadQuestions(),loadSettings(),loadReflectionStudents(),loadLessons()]);
+    await Promise.all([loadStudents(),loadQuestions(),loadSettings(),loadReflectionStudents(),loadLessons(),loadAnnouncements()]);
     const weekInput=document.getElementById('meditation-week-start');
     if(!weekInput.value)weekInput.value=mondayOf(today());
     await loadMeditationWeek();
@@ -125,6 +125,55 @@
     }finally{
       if(button)button.disabled=false;
     }
+  }
+
+  async function loadAnnouncements(){
+    const el=document.getElementById('announcements-admin-list');
+    try{
+      const d=await api.get('/admin/announcements');
+      const items=d.announcements||[];
+      if(!items.length){
+        el.innerHTML='<div class="empty-state">尚未發布老師通知。</div>';
+        return;
+      }
+      el.innerHTML=items.map(item=>
+        '<article class="announcement-admin-item">'+
+          '<div class="announcement-admin-copy">'+
+            '<div class="announcement-admin-head"><strong>'+esc(item.title)+'</strong><span class="badge '+(item.active?'ok':'no')+'">'+(item.active?'發佈中':'已停用')+'</span></div>'+
+            '<p>'+esc(item.message).replace(/\n/g,'<br>')+'</p>'+
+            '<small>'+esc(new Date(item.created_at).toLocaleString('zh-Hant'))+'</small>'+
+          '</div>'+
+          '<button type="button" class="secondary-btn announcement-toggle" data-id="'+esc(item.id)+'" data-active="'+item.active+'">'+(item.active?'停用通知':'重新啟用')+'</button>'+
+        '</article>'
+      ).join('');
+      el.querySelectorAll('.announcement-toggle').forEach(button=>
+        button.addEventListener('click',()=>toggleAnnouncement(button.dataset.id,button.dataset.active!=='true'))
+      );
+    }catch(err){
+      el.innerHTML='<div class="empty-state">目前無法載入老師通知。</div>';
+      show(notice,err.message||'無法載入老師通知。','error');
+    }
+  }
+
+  async function createAnnouncement(e){
+    e.preventDefault();
+    const title=document.getElementById('announcement-title').value.trim();
+    const message=document.getElementById('announcement-message').value.trim();
+    if(!title||!message)return show(notice,'請填寫通知標題及內容。','error');
+    try{
+      await api.post('/admin/announcements',{title,message});
+      e.target.reset();
+      show(notice,'老師通知已發布。學生進入今日題目頁面時會收到提醒。','success');
+      await loadAnnouncements();
+    }catch(err){show(notice,err.message||'無法發布老師通知。','error');}
+  }
+
+  async function toggleAnnouncement(id,active){
+    try{
+      await api.put('/admin/announcements/'+encodeURIComponent(id),{active});
+      show(notice,active?'老師通知已重新啟用。':'老師通知已停用。','success');
+      await loadAnnouncements();
+    }catch(err){show(notice,err.message||'無法更新老師通知。','error');}
   }
 
   async function loadSettings(){try{const d=await api.get('/admin/settings');document.getElementById('publish-time').value=d.publish_time;document.getElementById('close-time').value=d.close_time;document.getElementById('timezone').value=d.timezone;}catch(err){show(notice,err.message,'error');}}
@@ -275,6 +324,7 @@
   document.getElementById('load-results').addEventListener('click',loadResults);
   document.getElementById('load-meditation-week').addEventListener('click',loadMeditationWeek);
   document.getElementById('meditation-week-start').addEventListener('change',loadMeditationWeek);
+  document.getElementById('announcement-form').addEventListener('submit',createAnnouncement);
   document.getElementById('lesson-form').addEventListener('submit',saveLesson);
   document.getElementById('lesson-clear').addEventListener('click',clearLessonForm);
   document.getElementById('reflection-student-select').addEventListener('change',e=>loadAdminReflections(e.target.value));
