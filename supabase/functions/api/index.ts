@@ -444,7 +444,7 @@ async function route(req: Request) {
         type: "meditation",
         title: "打坐評核有更新",
         message: review.week_start + " 至 " + weekEnd + " 的評核更新為「" + review.rating + "」。" +
-          (comment ? "\\n師父評語：" + comment : ""),
+          (comment ? "\n師父評語：" + comment : ""),
         timestamp: review.updated_at
       });
     }
@@ -904,7 +904,7 @@ async function route(req: Request) {
     return json({ ok: true, announcement: data });
   }
 
-  const announcementMatch = path.match(/^\\/admin\\/announcements\\/([0-9a-f-]+)$/i);
+  const announcementMatch = path.match(/^\/admin\/announcements\/([0-9a-f-]+)$/i);
   if (announcementMatch && req.method === "PUT") {
     await session(req, "admin");
     if (typeof body.active !== "boolean") return bad("通知狀態不正確。", 422);
