@@ -140,7 +140,7 @@
         '<article class="announcement-admin-item">'+
           '<div class="announcement-admin-copy">'+
             '<div class="announcement-admin-head"><strong>'+esc(item.title)+'</strong><span class="badge '+(item.active?'ok':'no')+'">'+(item.active?'發佈中':'已停用')+'</span></div>'+
-            '<p>'+esc(item.message).replace(/\\n/g,'<br>')+'</p>'+
+            '<p>'+esc(item.message).replace(/\n/g,'<br>')+'</p>'+
             '<small>'+esc(new Date(item.created_at).toLocaleString('zh-Hant'))+'</small>'+
           '</div>'+
           '<button type="button" class="secondary-btn announcement-toggle" data-id="'+esc(item.id)+'" data-active="'+item.active+'">'+(item.active?'停用通知':'重新啟用')+'</button>'+
