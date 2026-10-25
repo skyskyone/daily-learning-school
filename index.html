@@ -40,6 +40,17 @@
 
       <div id="student-notice" class="notice hidden"></div>
 
+      <div id="student-updates-modal" class="updates-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="student-updates-title">
+        <section class="panel updates-dialog">
+          <p class="eyebrow">每日學堂 · 最新消息</p>
+          <h2 id="student-updates-title">學堂更新</h2>
+          <p class="updates-intro">老師有以下新消息，請閱讀後按「知道」繼續答題。</p>
+          <div id="student-updates-list" class="student-updates-list"></div>
+          <p id="student-updates-error" class="updates-error hidden" role="status"></p>
+          <button id="student-updates-ack" type="button" class="primary-btn">知道</button>
+        </section>
+      </div>
+
       <section class="question-card">
         <div class="question-ribbon">今日題目</div>
         <h2 id="question-text" class="question-text">—</h2>
