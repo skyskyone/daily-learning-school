@@ -40,6 +40,7 @@
         <button data-tab="settings" class="tab">時間設定</button>
         <button data-tab="reflections" class="tab">心得管理</button>
         <button data-tab="lessons" class="tab">教學影片</button>
+        <button data-tab="announcements" class="tab">老師通知</button>
       </nav>
 
       <section id="tab-students" class="admin-section">
@@ -128,6 +129,17 @@
           </div>
         </form>
         <div id="lessons-admin-table" class="table-wrap"></div>
+      </section>
+
+      <section id="tab-announcements" class="admin-section hidden">
+        <div class="section-heading"><div><p class="eyebrow">Teacher Announcements</p><h2>老師通知</h2></div></div>
+        <p class="muted">發布後，學生下次進入今日題目頁面時會看到通知。學生按「知道」後，同一則通知不會再重複彈出；新公告仍會正常提醒。</p>
+        <form id="announcement-form" class="form-grid two-col announcement-form">
+          <label class="full">通知標題<input id="announcement-title" class="field" maxlength="120" required placeholder="例如：本週打坐安排"></label>
+          <label class="full">通知內容<textarea id="announcement-message" class="field" rows="4" maxlength="1500" required placeholder="請輸入要通知全體學生的內容"></textarea></label>
+          <button class="primary-btn" type="submit">發布通知</button>
+        </form>
+        <div id="announcements-admin-list" class="announcement-admin-list"><div class="empty-state">正在載入通知紀錄……</div></div>
       </section>
 
       <section id="tab-settings" class="admin-section hidden">
