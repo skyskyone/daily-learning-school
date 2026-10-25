@@ -27,6 +27,82 @@
     }catch(err){ show(loginError,'目前無法載入學生名冊，請稍後再試。','error'); }
   }
 
+  const updatesModal = document.getElementById('student-updates-modal');
+  const updatesList = document.getElementById('student-updates-list');
+  const updatesAck = document.getElementById('student-updates-ack');
+  const updatesError = document.getElementById('student-updates-error');
+  let updatesCursor = null;
+  let updatesStorageKey = '';
+
+  function localUpdatesCursor(){
+    try { return updatesStorageKey ? (localStorage.getItem(updatesStorageKey) || '') : ''; }
+    catch (_) { return ''; }
+  }
+  function saveLocalUpdatesCursor(value){
+    try { if(updatesStorageKey && value) localStorage.setItem(updatesStorageKey,value); }
+    catch (_) {}
+  }
+
+  async function checkStudentUpdates(){
+    try{
+      const data = await api.get('/student/updates');
+      updatesStorageKey = 'dls_updates_ack_' + encodeURIComponent(greeting.textContent || 'student');
+      const localCursor = localUpdatesCursor();
+      const localMs = localCursor ? Date.parse(localCursor) : 0;
+      const items = (data.notifications || []).filter(item=>{
+        const time = Date.parse(item.timestamp || '');
+        return !localMs || Number.isNaN(time) || time > localMs;
+      });
+      updatesCursor = data.acknowledged_through || null;
+
+      if(!items.length){
+        if(localCursor && updatesCursor && Date.parse(localCursor) > Date.parse(updatesCursor)){
+          api.post('/student/updates/ack',{acknowledged_through:localCursor}).catch(()=>{});
+        }
+        return;
+      }
+
+      const kindLabels = {
+        lesson:'新增 YouTube 教學',
+        announcement:'老師通知',
+        meditation:'打坐評核'
+      };
+      updatesList.innerHTML = items.map(item=>
+        '<article class="student-update-item">'+
+          '<span class="student-update-kind">'+escapeHtml(kindLabels[item.type] || '學堂更新')+'</span>'+
+          '<h3>'+escapeHtml(item.title || '學堂更新')+'</h3>'+
+          '<p>'+escapeHtml(item.message || '').replace(/\n/g,'<br>')+'</p>'+
+        '</article>'
+      ).join('');
+      updatesError.classList.add('hidden');
+      updatesModal.classList.remove('hidden');
+      updatesAck.focus();
+    }catch(err){
+      // Update notices must never block the normal daily-answer flow.
+      console.warn('暫時無法載入學堂更新通知。',err);
+    }
+  }
+
+  async function acknowledgeUpdates(){
+    if(!updatesCursor){
+      updatesModal.classList.add('hidden');
+      return;
+    }
+    updatesAck.disabled = true;
+    updatesError.classList.add('hidden');
+    saveLocalUpdatesCursor(updatesCursor);
+    try{
+      await api.post('/student/updates/ack',{acknowledged_through:updatesCursor});
+    }catch(err){
+      // Local acknowledgement prevents repeat popups on this device if
+      // the server acknowledgement temporarily fails.
+      console.warn('無法同步通知已讀狀態，已在此裝置記錄。',err);
+    }finally{
+      updatesModal.classList.add('hidden');
+      updatesAck.disabled = false;
+    }
+  }
+
   async function tryExisting(){
     if (api.tokenRole() !== 'student') return false;
     try{
@@ -35,6 +111,7 @@
       studentView.classList.remove('hidden');
       greeting.textContent = data.display_name;
       await loadToday();
+      await checkStudentUpdates();
       return true;
     }catch(_){ api.clearToken(); return false; }
   }
@@ -54,6 +131,7 @@
       studentView.classList.remove('hidden');
       greeting.textContent = data.display_name;
       await loadToday();
+      await checkStudentUpdates();
     }catch(err){ show(loginError, err.message || '登入失敗。','error'); }
     finally{ loginBtn.disabled = false; }
   }
@@ -115,6 +193,7 @@
     catch(err){ show(notice,err.message,'error'); await loadToday(); }
   }
 
+  updatesAck.addEventListener('click',acknowledgeUpdates);
   logoutBtn.addEventListener('click',()=>{ api.clearToken(); location.reload(); });
   confirmYes.addEventListener('click',async()=>{
     const choice=pendingChoice;
