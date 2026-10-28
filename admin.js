@@ -66,10 +66,13 @@
     const d=new Date(String(value)+'T00:00:00Z');
     return /^\d{4}-\d{2}-\d{2}$/.test(String(value))&&!Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value&&d.getUTCDay()===1;
   }
+  let meditationLoadRequestId=0;
+
   async function loadMeditationWeek(){
     const input=document.getElementById('meditation-week-start');
     const list=document.getElementById('meditation-admin-list');
     const period=document.getElementById('meditation-week-period');
+    const loadButton=document.getElementById('load-meditation-week');
     if(!input.value)input.value=mondayOf(today());
     if(!isMonday(input.value)){
       period.textContent='評核週的開始日期必須是星期一。';
@@ -77,41 +80,99 @@
       show(notice,'請選擇星期一作為評核週的開始日期。','error');
       return;
     }
+
+    const requestId=++meditationLoadRequestId;
     const start=input.value;
     const end=datePlusDays(start,6);
+    const originalButtonText=loadButton.textContent;
     period.textContent='評核期間：'+start+' 至 '+end+'（星期一至星期日）';
+    loadButton.disabled=true;
+    loadButton.textContent='載入中……';
     list.innerHTML='<div class="empty-state">正在載入學生名單……</div>';
+
+    let timeoutId;
     try{
-      const data=await api.get('/admin/meditation-reviews?week_start='+encodeURIComponent(start));
-      const rows=data.rows||[];
+      const data=await Promise.race([
+        api.get('/admin/meditation-reviews?week_start='+encodeURIComponent(start)),
+        new Promise((_,reject)=>{
+          timeoutId=setTimeout(()=>reject(new Error('載入逾時。請檢查網絡或 API 狀態，再按「載入本週名單」重試。')),12000);
+        })
+      ]);
+      if(requestId!==meditationLoadRequestId)return;
+      if(!data||!Array.isArray(data.rows))throw new Error('API 回傳的學生名單格式不正確，請重新載入。');
+
+      const rows=data.rows;
       if(!rows.length){
         list.innerHTML='<div class="empty-state">目前沒有學生名單。</div>';
         return;
       }
       const grades=['長進','尚可','不及'];
-      list.innerHTML='<table class="meditation-admin-table"><thead><tr><th>學生</th><th>評核（單選）</th><th>老師評語</th><th>儲存</th></tr></thead><tbody>'+
-        rows.map(row=>{
-          const gradeOptions=grades.map(grade=>'<label class="meditation-admin-grade"><input type="radio" name="meditation-grade-'+esc(row.id)+'" value="'+grade+'" '+(row.rating===grade?'checked':'')+'><span>'+grade+'</span></label>').join('');
-          return '<tr data-student-id="'+esc(row.id)+'">'+
-            '<td><strong>'+esc(row.display_name)+'</strong>'+(row.active?'':'<div class="tiny-note">已停用學生</div>')+'</td>'+
-            '<td><div class="meditation-admin-grades">'+gradeOptions+'</div></td>'+
-            '<td><input type="text" class="field meditation-admin-comment" data-comment-for="'+esc(row.id)+'" maxlength="500" value="'+esc(row.comment||'')+'" placeholder="寫一句簡短評語"></td>'+
-            '<td><button type="button" class="secondary-btn meditation-review-save" data-id="'+esc(row.id)+'">儲存</button><div class="meditation-save-status" data-status-for="'+esc(row.id)+'">'+(row.rating?'已儲存':'尚未評核')+'</div></td>'+
-          '</tr>';
-        }).join('')+'</tbody></table>';
-      list.querySelectorAll('.meditation-review-save').forEach(button=>button.addEventListener('click',()=>saveMeditationReview(button.dataset.id,start)));
+      list.innerHTML='<div class="meditation-admin-cards">'+rows.map(row=>{
+        const comment=String(row.comment||'');
+        const hasAssessment=!!row.rating;
+        const editorOpen=hasAssessment||!!comment.trim();
+        const gradeOptions=grades.map(grade=>
+          '<label class="meditation-admin-grade">'+
+            '<input type="radio" name="meditation-grade-'+esc(row.id)+'" value="'+grade+'" '+(row.rating===grade?'checked':'')+'>'+
+            '<span>'+grade+'</span>'+
+          '</label>'
+        ).join('');
+        return '<article class="meditation-admin-card" data-student-id="'+esc(row.id)+'">'+
+          '<div class="meditation-admin-card-head">'+
+            '<div><strong class="meditation-admin-student-name">'+esc(row.display_name)+'</strong>'+
+            (row.active?'':'<div class="tiny-note">已停用學生</div>')+'</div>'+
+            '<div class="meditation-save-status" data-status-for="'+esc(row.id)+'">'+(hasAssessment?'已儲存評核':'尚未評核')+'</div>'+
+          '</div>'+
+          '<div class="meditation-admin-grade-section"><span class="meditation-admin-field-label">評核等級（單選）</span>'+
+            '<div class="meditation-admin-grades">'+gradeOptions+'</div>'+
+          '</div>'+
+          '<div class="meditation-comment-editor" data-comment-editor="'+esc(row.id)+'" '+(editorOpen?'':'hidden')+'>'+
+            '<label class="meditation-admin-field-label" for="meditation-comment-'+esc(row.id)+'">老師評語</label>'+
+            '<textarea id="meditation-comment-'+esc(row.id)+'" class="field meditation-admin-comment" data-comment-for="'+esc(row.id)+'" maxlength="500" rows="2" placeholder="請寫一句簡短評語……">'+esc(comment)+'</textarea>'+
+          '</div>'+
+          '<div class="meditation-admin-card-actions"><button type="button" class="secondary-btn meditation-review-save" data-id="'+esc(row.id)+'">儲存評核</button></div>'+
+        '</article>';
+      }).join('')+'</div>';
+
+      list.querySelectorAll('.meditation-admin-card').forEach(card=>{
+        const studentId=card.dataset.studentId;
+        const editor=card.querySelector('[data-comment-editor="'+studentId+'"]');
+        card.querySelectorAll('input[type="radio"]').forEach(radio=>{
+          radio.addEventListener('change',()=>{
+            if(editor)editor.hidden=false;
+            const textarea=card.querySelector('.meditation-admin-comment');
+            if(textarea)textarea.focus({preventScroll:true});
+          });
+        });
+      });
+      list.querySelectorAll('.meditation-review-save').forEach(button=>
+        button.addEventListener('click',()=>saveMeditationReview(button.dataset.id,start))
+      );
+      show(notice,'');
     }catch(err){
-      list.innerHTML='<div class="empty-state">無法載入本週名單。</div>';
-      show(notice,err.message||'無法載入打坐評核名單。','error');
+      if(requestId!==meditationLoadRequestId)return;
+      const message=err.message||'無法載入打坐評核名單。';
+      list.innerHTML='<div class="empty-state meditation-load-error">'+esc(message)+'</div>'+
+        '<button type="button" class="secondary-btn meditation-load-retry">重新載入</button>';
+      list.querySelector('.meditation-load-retry')?.addEventListener('click',loadMeditationWeek);
+      show(notice,message,'error');
+    }finally{
+      if(timeoutId)clearTimeout(timeoutId);
+      if(requestId===meditationLoadRequestId){
+        loadButton.disabled=false;
+        loadButton.textContent=originalButtonText;
+      }
     }
   }
+
   async function saveMeditationReview(studentId,weekStart){
-    const checked=document.querySelector('input[name="meditation-grade-'+studentId+'"]:checked');
-    const comment=document.querySelector('.meditation-admin-comment[data-comment-for="'+studentId+'"]');
-    const status=document.querySelector('.meditation-save-status[data-status-for="'+studentId+'"]');
+    const card=document.querySelector('.meditation-admin-card[data-student-id="'+studentId+'"]');
+    const checked=card?.querySelector('input[name="meditation-grade-'+studentId+'"]:checked');
+    const comment=card?.querySelector('.meditation-admin-comment');
+    const status=card?.querySelector('.meditation-save-status');
+    const button=card?.querySelector('.meditation-review-save');
     if(!checked)return show(notice,'請先為這位學生選擇「長進」、「尚可」或「不及」。','error');
-    const button=document.querySelector('.meditation-review-save[data-id="'+studentId+'"]');
-    if(button)button.disabled=true;
+    if(button){button.disabled=true;button.textContent='儲存中……';}
     try{
       await api.put('/admin/meditation-reviews/'+encodeURIComponent(studentId),{
         week_start:weekStart,
@@ -119,11 +180,11 @@
         comment:comment?comment.value.trim():''
       });
       if(status)status.textContent='已儲存';
-      show(notice,'評核已儲存。','success');
+      show(notice,'評核及老師評語已儲存。','success');
     }catch(err){
       show(notice,err.message||'評核儲存失敗。','error');
     }finally{
-      if(button)button.disabled=false;
+      if(button){button.disabled=false;button.textContent='儲存評核';}
     }
   }
 
