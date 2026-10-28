@@ -56,3 +56,34 @@
   .announcement-admin-item{grid-template-columns:1fr}
   .announcement-admin-item .secondary-btn{width:100%}
 }
+
+
+/* 打坐週評核：改用手機及桌面都清楚可見的學生評核卡 */
+#meditation-admin-list{min-width:0}
+.meditation-admin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.meditation-admin-card{min-width:0;padding:16px;border:1px solid var(--line);background:rgba(255,250,236,.72)}
+.meditation-admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:15px}
+.meditation-admin-student-name{font-size:18px;overflow-wrap:anywhere}
+.meditation-admin-field-label{display:block;margin-bottom:7px;font-size:13px;color:var(--muted);font-weight:700}
+.meditation-admin-grade-section{margin-bottom:14px}
+.meditation-admin-grades{display:flex;flex-wrap:wrap;gap:8px}
+.meditation-admin-grade{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:8px 12px;border:1px solid rgba(185,168,137,.8);background:#fbf7ea;cursor:pointer;white-space:nowrap;font-size:14px}
+.meditation-admin-grade:has(input:checked){border-color:var(--seal);background:#f1e2c9;box-shadow:inset 0 0 0 1px var(--seal)}
+.meditation-admin-grade input{appearance:none;-webkit-appearance:none;display:inline-grid;place-content:center;width:15px;height:15px;flex:0 0 15px;border:1px solid #9d927f;border-radius:2px;background:#fffdf7;margin:0;cursor:pointer}
+.meditation-admin-grade input:checked{background:var(--seal);border-color:var(--seal)}
+.meditation-admin-grade input:checked::after{content:"✓";font-size:11px;line-height:13px;color:#fff}
+.meditation-comment-editor{margin:12px 0 14px}
+.meditation-comment-editor[hidden]{display:none!important}
+.meditation-admin-comment{display:block;width:100%;min-width:0;max-width:100%;margin:0;resize:vertical;line-height:1.7}
+.meditation-admin-card-actions{display:flex;justify-content:flex-end;gap:8px}
+.meditation-admin-card-actions .secondary-btn{margin:0}
+.meditation-save-status{font-size:12px;color:var(--muted);white-space:nowrap}
+.meditation-load-error{margin-bottom:10px;color:#7a2d23}
+.meditation-load-retry{width:100%}
+@media(max-width:760px){
+  .meditation-admin-cards{grid-template-columns:minmax(0,1fr);gap:10px}
+  .meditation-admin-card{padding:13px}
+  .meditation-admin-card-head{align-items:center}
+  .meditation-admin-grade{flex:1;justify-content:center;min-width:78px}
+  .meditation-admin-card-actions .secondary-btn{width:100%}
+}
